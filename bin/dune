@@ -1,0 +1,4 @@
+(executable
+ (public_name popllang)
+ (name main)
+ (libraries popllang))
