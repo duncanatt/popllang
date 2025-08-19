@@ -1,6 +1,5 @@
 {
-module Parser = Langone_parser
-open Parser
+open Langone_parser
 }
 
 let white = [' ' '\t']+

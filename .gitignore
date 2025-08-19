@@ -75,3 +75,4 @@ site/
 out/
 _build/
 *.egg-info
+.vscode/
