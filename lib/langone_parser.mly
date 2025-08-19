@@ -1,5 +1,5 @@
 %{
-open Ast
+open Langone_ast
 %}
 
 %token <int> INT
@@ -25,7 +25,7 @@ open Ast
 %left PLUS
 %left TIMES  
 
-%start <Ast.expr> prog
+%start <expr> prog
 
 %%
 

@@ -1,13 +1,13 @@
 (library
  (name popllang)
- (modules math expr ast parser lexer))
+ )
 
-(menhir (modules parser))
-(ocamllex lexer)
-
+; Turn subdirectories into namespaces: Popllang.<Subdir>.<Module>
 ; (include_subdirs qualified)
 
+; Tie generators in Langone/ to this library
 ; (subdir
-;  Langone
-;  (menhir (modules parser))
-;  (ocamllex lexer))
+ ; langone
+ (menhir (modules langone_parser))
+ (ocamllex langone_lexer)
+ ; )

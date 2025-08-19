@@ -1,4 +1,5 @@
 {
+module Parser = Langone_parser
 open Parser
 }
 
