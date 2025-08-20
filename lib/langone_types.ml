@@ -1,5 +1,4 @@
 module Ast = Langone_ast
-module Util = Langone_util
 
 type typ =
   | TNum

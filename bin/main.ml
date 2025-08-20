@@ -199,7 +199,9 @@ open Context *)
   eval_big e *)
 
 
-let _ = 
+
+        
+let langone_test =  
   let ast = parse 
   (* "2" *)
     (* "1-1 <= 2 + 3 + (~~4 && true)"  *)
@@ -219,7 +221,9 @@ let _ =
           let typ = LangoneTypes.TNum in
             let result = LangoneTypes.check ast typ in
               Printf.printf "Expression %s has %s? %s\n" str_ast (LangoneTypes.string_of_typ typ) (string_of_bool result)
-        
 
+let _langoneext_test = 
+  ()
 
-
+let _ = 
+  langone_test
