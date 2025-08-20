@@ -1,22 +1,27 @@
-(* module Ast = Langone.Ast *)
 module Ast = Langone_ast
 
-let string_of_bop (bop: Ast.bop) = 
-  match bop with
+(* Pretty prints an operator. *)
+let string_of_binop (op: Ast.binop) =
+  match op with
   | Add -> "+"
-  | Mult -> "+"
-  | Leq -> "+"
+  | Sub -> "-"
+  | Leq -> "<="
+  | And -> "&&"
 
-let rec string_of_ast (a: Ast.expr) = 
-  match a with
-  | Var var -> var
-  | Int int -> string_of_int int
-  | Bool bool -> string_of_bool bool
-  | Binop (bop, expr1, expr2) -> 
-      Printf.sprintf "%s %s %s" (string_of_ast expr1) (string_of_bop bop) (string_of_ast expr2)
-  | Let (var, expr1, expr2) ->
-      Printf.sprintf "let %s = %s in %s" var (string_of_ast expr1) (string_of_ast expr2)
-  | If (expr1, expr2, expr3) ->
-      Printf.sprintf "if %s then %s else %s" (string_of_ast expr1) (string_of_ast expr2) (string_of_ast expr3)
+let string_of_unop (op: Ast.unop) =
+  match op with
+  | Not -> "~"
 
+let string_of_val (v: Ast.value): string =
+  match v with
+  | Num n -> string_of_int n
+  | Bool b -> string_of_bool b
 
+(* Pretty prints an expression. *)
+let rec string_of_ast (e: Ast.expr) =
+  match e with
+  | Val v -> string_of_val v
+  | BinOp (op, e1, e2) -> 
+    Printf.sprintf "(%s %s %s)" (string_of_ast e1) (string_of_binop op) (string_of_ast e2)
+  | UnOp (op, e) ->
+    Printf.sprintf "%s%s" (string_of_unop op) (string_of_ast e)
