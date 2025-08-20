@@ -5,7 +5,6 @@
   Printf.printf "Result is 2 + 3 = %d\n" result *)
 
 open Popllang.Langone.Ast
-open Popllang.Langone.Util
 (* open Popllang.Langone.Sem *)
 
 module LangoneTypes = Popllang.Langone.Types
@@ -207,16 +206,16 @@ let _ =
     (* "~(1 + 2 + 3 <= 5 - 6) && false" *)
     "(2 + 4) - (5 + 10)"
   in
-    let str_ast = (string_of_ast ast) in
+    let str_ast = (string_of_expr ast) in
       let () = Printf.printf "Input expression: %s\n" str_ast in
         (* let result = eval ast in
           Printf.printf "Eval: %s\n" (string_of_val result) *)
         (* let result = reduce ast in
-          Printf.printf "Reduce: %s\n" (string_of_ast result) *)
+          Printf.printf "Reduce: %s\n" (string_of_expr result) *)
         (* let typ = LangoneTypes.infer ast in
           Printf.printf "Inferred type: %s\n" (LangoneTypes.string_of_typ typ) *)
         (* let result = reduce_all ast in
-          Printf.printf "Reduce all: %s\n" (string_of_ast result) *)
+          Printf.printf "Reduce all: %s\n" (string_of_expr result) *)
           let typ = LangoneTypes.TNum in
             let result = LangoneTypes.check ast typ in
               Printf.printf "Expression %s has %s? %s\n" str_ast (LangoneTypes.string_of_typ typ) (string_of_bool result)

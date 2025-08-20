@@ -10,23 +10,23 @@ let rec infer (e: Ast.expr): typ =
   | BinOp (Add, e1, e2) -> 
     (match (infer e1, infer e2) with
     | (TNum, TNum) -> TNum
-    | (_, _) -> failwith ("Cannot infer type for " ^ (Util.string_of_ast e)))
+    | (_, _) -> failwith ("Cannot infer type for " ^ (Ast.string_of_expr e)))
   | BinOp (Sub, e1, e2) -> 
     (match (infer e1, infer e2) with
     | (TNum, TNum) -> TNum
-    | (_, _) -> failwith ("Cannot infer type for " ^ (Util.string_of_ast e)))
+    | (_, _) -> failwith ("Cannot infer type for " ^ (Ast.string_of_expr e)))
   | BinOp (Leq, e1, e2) -> 
     (match (infer e1, infer e2) with
     | (TNum, TNum) -> TBool
-    | (_, _) -> failwith ("Cannot infer type for " ^ (Util.string_of_ast e)))
+    | (_, _) -> failwith ("Cannot infer type for " ^ (Ast.string_of_expr e)))
   | BinOp (And, e1, e2) -> 
     (match (infer e1, infer e2) with
     | (TBool, TBool) -> TBool
-    | (_, _) -> failwith ("Cannot infer type for " ^ (Util.string_of_ast e)))
+    | (_, _) -> failwith ("Cannot infer type for " ^ (Ast.string_of_expr e)))
   | UnOp (Not, e) ->
     (match (infer e) with
     | TBool -> TBool
-    | _ -> failwith ("Cannot infer type for " ^ (Util.string_of_ast e)))
+    | _ -> failwith ("Cannot infer type for " ^ (Ast.string_of_expr e)))
   | Val (Num _) -> TNum
   | Val (Bool _) -> TBool
 
