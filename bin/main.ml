@@ -4,16 +4,18 @@
   (* Assuming Popllang.Expr.sqr is defined and used here *)
   Printf.printf "Result is 2 + 3 = %d\n" result *)
 
-open Popllang.Langone.Ast
+(* open Popllang.Langone.Ast *)
 (* open Popllang.Langone.Sem *)
 
 module LangoneTypes = Popllang.Langone.Types
 
+open Popllang
+
 (** [parse s] parses [s] into an AST. *)
-let parse (s : string) : expr =
+(* let parse (s : string) : expr =
   let lexbuf = Lexing.from_string s in
   let ast = Popllang.Langone.Parser.prog Popllang.Langone.Lexer.read lexbuf in
-  ast
+  ast *)
 
 (** [typ] represents the type of an expression. *)
 (* type typ =
@@ -201,7 +203,7 @@ open Context *)
 
 
         
-let langone_test =  
+(* let _langone_test =  
   let ast = parse 
   (* "2" *)
     (* "1-1 <= 2 + 3 + (~~4 && true)"  *)
@@ -220,10 +222,23 @@ let langone_test =
           Printf.printf "Reduce all: %s\n" (string_of_expr result) *)
           let typ = LangoneTypes.TNum in
             let result = LangoneTypes.check ast typ in
-              Printf.printf "Expression %s has %s? %s\n" str_ast (LangoneTypes.string_of_typ typ) (string_of_bool result)
+              Printf.printf "Expression %s has %s? %s\n" str_ast (LangoneTypes.string_of_typ typ) (string_of_bool result) *)
 
-let _langoneext_test = 
-  ()
+let langoneext_test s = 
+  let lexbuf = Lexing.from_string s in
+    let ast = Langoneext.Parser.prog Langoneext.Lexer.read lexbuf in
+      let () =
+        Printf.printf "Parsed AST:\n%s\n" (Langoneext.Ast.string_of_expr ast)
+      in
+        ast 
+      
 
 let _ = 
-  langone_test
+  (* langone_test *)
+  let ast = langoneext_test "let x = 5 in x + 5" in
+    (* let ast2 = Langoneext.Sem.subst "y" (Langoneext.Ast.Num 6) ast in
+      let ast3 = Langoneext.Sem.subst "x" (Langoneext.Ast.Num 6) ast in
+        Printf.printf "Ast2 = %s\n Ast3 = %s\n" 
+        (Langoneext.Ast.string_of_expr ast2) (Langoneext.Ast.string_of_expr ast3) *)
+    let v = Langoneext.Sem.eval ast in
+      Printf.printf "Result: %s\n" (Langoneext.Ast.string_of_val v)

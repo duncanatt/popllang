@@ -2,13 +2,8 @@
  (name popllang)
 )
 
-; Turn subdirectories into namespaces: Popllang.<Subdir>.<Module>
-; (include_subdirs qualified)
-
-; Tie generators in Langone/ to this library
-; (subdir
- ; langone
+; Menhir and OCamllex.
  (menhir 
-  (modules langone_parser))
- (ocamllex langone_lexer)
- ; )
+  (modules langone_parser langoneext_parser))
+ (ocamllex langone_lexer langoneext_lexer)
+
