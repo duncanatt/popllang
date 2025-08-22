@@ -8,6 +8,7 @@
 (* open Popllang.Langone.Sem *)
 
 module LangoneTypes = Popllang.Langone.Types
+module LangoneextTypes = Popllang.Langoneext.Types
 
 open Popllang
 
@@ -235,10 +236,22 @@ let langoneext_test s =
 
 let _ = 
   (* langone_test *)
-  let ast = langoneext_test "let x = 5 in x + 5" in
+  (* let ast = langoneext_test "let x = (let y = 5 in y) in x + x" in *)
+  (* let ast = langoneext_test "let x = let y = 5 in y in x + x" in *)
+  (* let ast = langoneext_test "let x = 5 in let y = 6 in y + x" in *)
+  let ast = langoneext_test "let x = true in let x = 5 in x" in
+  (* let ast = langoneext_test "(1 + (2 + 5)) + (3 + 4)" in *)
     (* let ast2 = Langoneext.Sem.subst "y" (Langoneext.Ast.Num 6) ast in
       let ast3 = Langoneext.Sem.subst "x" (Langoneext.Ast.Num 6) ast in
         Printf.printf "Ast2 = %s\n Ast3 = %s\n" 
         (Langoneext.Ast.string_of_expr ast2) (Langoneext.Ast.string_of_expr ast3) *)
-    let v = Langoneext.Sem.eval ast in
-      Printf.printf "Result: %s\n" (Langoneext.Ast.string_of_val v)
+    (* let v = Langoneext.Sem.eval ast in
+      Printf.printf "Result: %s\n" (Langoneext.Ast.string_of_val v) *)
+    (* let expr = Langoneext.Sem.reduce ast in
+      Printf.printf "Result: %s\n" (Langoneext.Ast.string_of_expr expr) *)
+    (* let expr = Langoneext.Sem.reduce_all ast in
+      Printf.printf "Result: %s\n" (Langoneext.Ast.string_of_expr expr) *)
+    (* let t = Langoneext.Types.infer ast Langoneext.Types.empty in
+      Printf.printf "Type is: %s\n" (Langoneext.Types.string_of_typ t) *)
+    let res = Langoneext.Types.check ast Langoneext.Types.TBool Langoneext.Types.empty in
+      Printf.printf "Answer is: %s\n" (string_of_bool res)

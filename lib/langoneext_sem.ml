@@ -38,5 +38,64 @@ let rec eval (e: Ast.expr): Ast.value =
   | Let(x, e1, e2) ->
       let v = eval e1 in
         eval (subst x v e2)
-  | Var x -> failwith (Printf.sprintf "You can only evaluate closed terms; %s is open" x)
+  | Var x -> failwith (Printf.sprintf "You can only evaluate closed terms; %s is free" x)
   | Val v -> v
+
+  let rec reduce (e: Ast.expr): Ast.expr =
+  match e with
+  | BinOp (Add, e1, e2) -> 
+      let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
+      (match (e1, e2) with
+      | (Val (Num n1), Val (Num n2)) ->  Val (Num (n1 + n2))          (* rAdd1*)
+      | (Val _, Val _) -> failwith ("Expression '" ^ (Ast.string_of_expr e) ^ "' stuck")
+      | (Val v, e2)                  -> BinOp (Add, Val v, (reduce e2))   (* rAdd3*)   
+      | _                            -> BinOp (Add, (reduce e1), e2)  (* rAdd2*)
+      )  
+  | BinOp (Sub, e1, e2) ->
+      let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
+      (match (e1, e2) with
+      | (Val (Num n1), Val (Num n2)) ->  Val (Num (n1 - n2))          (* rSub1*)
+      | (Val _, Val _) -> failwith ("Expression '" ^ (Ast.string_of_expr e) ^ "' stuck")
+      | (Val v, e2)                  -> BinOp (Sub, Val v, (reduce e2))   (* rSub3*)   
+      | _                            -> BinOp (Sub, (reduce e1), e2)  (* rSub2*)
+      )
+  | BinOp (Leq, e1, e2) -> 
+    let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
+    (match (e1, e2) with
+      | (Val (Num n1), Val (Num n2)) ->  Val (Bool (n1 <= n2))          (* rLeq1*)
+      | (Val _, Val _) -> failwith ("Expression '" ^ (Ast.string_of_expr e) ^ "' stuck")
+      | (Val v, e2)                  -> BinOp (Leq, Val v, (reduce e2))   (* rLeq3*)   
+      | _                            -> BinOp (Leq, (reduce e1), e2)  (* rLeq2*)
+      )
+  | BinOp (And, e1, e2) ->
+    let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
+    (match (e1, e2) with
+      | (Val (Bool b1), Val (Bool b2)) ->  Val (Bool (b1 && b2))          (* rAnd1*)
+      | (Val _, Val _) -> failwith ("Expression '" ^ (Ast.string_of_expr e) ^ "' stuck")
+      | (Val v, e2)                  -> BinOp (And, Val v, (reduce e2))   (* rAnd3*)   
+      | _                            -> BinOp (And, (reduce e1), e2)  (* rAnd2*)
+      )
+  | UnOp (Not, e) ->
+    let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
+    (match e with
+    | Val (Bool b) -> Val (Bool (not b))
+    | Val _ -> failwith ("Expression '" ^ (Ast.string_of_expr e) ^ "' stuck")
+    | _ -> UnOp (Not, reduce e)
+    )
+  | Let (x, e1, e2) ->
+    let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
+    (match (e1, e2) with
+    | (Val v, e2) -> subst x v e2
+    | (e1, e2) -> Let (x, reduce e1, e2)
+    )
+  | Var x -> 
+    let () = Printf.printf "Reduce variable %s\n" (Ast.string_of_expr e) in
+    failwith (Printf.sprintf "You can only reduce closed terms; %s is free" x)
+  | Val _ -> 
+    let () = Printf.printf "Reduce value %s\n" (Ast.string_of_expr e) in
+    failwith ("Value '" ^ (Ast.string_of_expr e) ^ "' does not reduce")
+
+  let rec reduce_all (e: Ast.expr): Ast.expr =
+  match e with
+  | Val _ -> e
+  | _ -> (reduce e) |> reduce_all 
