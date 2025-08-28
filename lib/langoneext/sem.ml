@@ -9,7 +9,6 @@ let rec subst (x: string) (v: value) (e: expr): expr =
   | BinOp (op, e1, e2) -> BinOp (op, (subst x v e1), (subst x v e2))
   | UnOp (op, e) -> UnOp (op, (subst x v e))
   | Let (y, e1, e2) -> 
-    Printf.printf "Matched LET. Let var=%s\n" y;
     let e3 = if x = y then e2 else (subst x v e2) in
       Let (y, (subst x v e1), e3)
   

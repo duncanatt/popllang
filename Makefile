@@ -11,5 +11,7 @@ utop:
 	# dune utop lib/langone
 	dune utop .
 
-# test:
-# 	dune exec test/main.exe
+.PHONY: test
+
+test:
+	dune runtest

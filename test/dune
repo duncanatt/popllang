@@ -1,7 +1,7 @@
 (test
- (name test_math)
- (libraries popllang ounit2))
+ (name test_langoneext)
+ (libraries popllang langoneext ounit2))
 
 (test
- (name test_expr)
- (libraries popllang ounit2))
+ (name test_langone)
+ (libraries popllang langone ounit2))
