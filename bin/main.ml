@@ -7,10 +7,7 @@
 (* open Popllang.Langone.Ast *)
 (* open Popllang.Langone.Sem *)
 
-module LangoneTypes = Popllang.Langone.Types
-module LangoneextTypes = Popllang.Langoneext.Types
-
-open Popllang
+(* open Popllang *)
 
 (** [parse s] parses [s] into an AST. *)
 (* let parse (s : string) : expr =
@@ -202,30 +199,36 @@ open Context *)
   eval_big e *)
 
 
-
+let langone_test s = 
+  let lexbuf = Lexing.from_string s in
+    let ast = Langone.Parser.prog Langone.Lexer.read lexbuf in
+      let () =
+        Printf.printf "Parsed AST:\n%s\n" (Langone.Ast.string_of_expr ast)
+      in
+        ast 
         
-(* let _langone_test =  
-  let ast = parse 
+let _langone_test =  
+  let ast = langone_test 
   (* "2" *)
     (* "1-1 <= 2 + 3 + (~~4 && true)"  *)
     (* "~(1 + 2 + 3 <= 5 - 6) && false" *)
     "(2 + 4) - (5 + 10)"
   in
-    let str_ast = (string_of_expr ast) in
+    let str_ast = (Langone.Ast.string_of_expr ast) in
       let () = Printf.printf "Input expression: %s\n" str_ast in
         (* let result = eval ast in
           Printf.printf "Eval: %s\n" (string_of_val result) *)
         (* let result = reduce ast in
           Printf.printf "Reduce: %s\n" (string_of_expr result) *)
-        (* let typ = LangoneTypes.infer ast in
-          Printf.printf "Inferred type: %s\n" (LangoneTypes.string_of_typ typ) *)
-        (* let result = reduce_all ast in
-          Printf.printf "Reduce all: %s\n" (string_of_expr result) *)
-          let typ = LangoneTypes.TNum in
-            let result = LangoneTypes.check ast typ in
-              Printf.printf "Expression %s has %s? %s\n" str_ast (LangoneTypes.string_of_typ typ) (string_of_bool result) *)
+        (* let typ = Langone.Types.infer ast in
+          Printf.printf "Inferred type: %s\n" (Langone.Types.string_of_typ typ) *)
+        let result = Langone.Sem.reduce_all ast in
+          Printf.printf "Reduce all: %s\n" (Langone.Ast.string_of_expr result)
+          (* let typ = Langone.Types.TNum in
+            let result = Langone.Types.check ast typ in
+              Printf.printf "Expression %s has %s? %s\n" str_ast (Langone.Types.string_of_typ typ) (string_of_bool result) *)
 
-let langoneext_test s = 
+let _langoneext_test s = 
   let lexbuf = Lexing.from_string s in
     let ast = Langoneext.Parser.prog Langoneext.Lexer.read lexbuf in
       let () =
@@ -234,12 +237,12 @@ let langoneext_test s =
         ast 
       
 
-let _ = 
+(* let _ =  *)
   (* langone_test *)
   (* let ast = langoneext_test "let x = (let y = 5 in y) in x + x" in *)
   (* let ast = langoneext_test "let x = let y = 5 in y in x + x" in *)
   (* let ast = langoneext_test "let x = 5 in let y = 6 in y + x" in *)
-  let ast = langoneext_test "let x = true in let x = 5 in x" in
+  (* let ast = langoneext_test "let x = true in let x = 5 in x" in *)
   (* let ast = langoneext_test "(1 + (2 + 5)) + (3 + 4)" in *)
     (* let ast2 = Langoneext.Sem.subst "y" (Langoneext.Ast.Num 6) ast in
       let ast3 = Langoneext.Sem.subst "x" (Langoneext.Ast.Num 6) ast in
@@ -249,9 +252,9 @@ let _ =
       Printf.printf "Result: %s\n" (Langoneext.Ast.string_of_val v) *)
     (* let expr = Langoneext.Sem.reduce ast in
       Printf.printf "Result: %s\n" (Langoneext.Ast.string_of_expr expr) *)
-    (* let expr = Langoneext.Sem.reduce_all ast in
+    (* let expr = Langoneext.Sem.Sem. ast in
       Printf.printf "Result: %s\n" (Langoneext.Ast.string_of_expr expr) *)
     (* let t = Langoneext.Types.infer ast Langoneext.Types.empty in
       Printf.printf "Type is: %s\n" (Langoneext.Types.string_of_typ t) *)
-    let res = Langoneext.Types.check ast Langoneext.Types.TBool Langoneext.Types.empty in
-      Printf.printf "Answer is: %s\n" (string_of_bool res)
+    (* let res = Langoneext.Types.check ast Langoneext.Types.TBool Langoneext.Types.empty in
+      Printf.printf "Answer is: %s\n" (string_of_bool res) *)

@@ -1,13 +1,13 @@
 {
-open Langoneext_parser
+open Parser
 }
 
 (* Token patterns. *)
 let white = [' ' '\t']+
 let digit = ['0'-'9']
 let num = digit+
-let letter = ['a'-'z' 'A'-'Z']
-let var = letter+
+(* let letter = ['a'-'z' 'A'-'Z']
+let id = letter+ *)
 
 (* Read function transforming strings into tokens. Invoked by the parser. *)
 rule read = parse
@@ -22,9 +22,12 @@ rule read = parse
   | "~" { NOT }
   | "(" { LPAREN }
   | ")" { RPAREN }
-  | "let" { LET }
-  | "=" { EQUALS }
-  | "in" { IN }
-  | var { VAR (Lexing.lexeme lexbuf) }
+  (* | "let" { LET } *)
+  (* | "=" { EQUALS } *)
+  (* | "in" { IN } *)
+  (* | "if" { IF } *)
+  (* | "then" { THEN } *)
+  (* | "else" { ELSE } *)
+  (* | id { ID (Lexing.lexeme lexbuf) } *)
   | num { NUM (int_of_string (Lexing.lexeme lexbuf)) }
   | eof { EOF }

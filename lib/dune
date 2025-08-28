@@ -1,9 +1,5 @@
 (library
  (name popllang)
-)
-
-; Menhir and OCamllex.
- (menhir 
-  (modules langone_parser langoneext_parser))
- (ocamllex langone_lexer langoneext_lexer)
-
+ (modules math expr)
+ (libraries langone langoneext)
+ )
