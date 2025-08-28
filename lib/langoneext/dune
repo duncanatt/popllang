@@ -1,6 +1,6 @@
 (library
  (name langoneext)
- (modules ast lexer parser sem types)
+ (modules ast lexer parser sem types run)
  )
 
 (menhir (modules parser))

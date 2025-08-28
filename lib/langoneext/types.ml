@@ -12,7 +12,7 @@ module Env = Map.Make(String)
 type typenv = typ Env.t
 
 (* Returns empty type environment. *)
-let empty: typenv = Env.empty
+let empty_env: typenv = Env.empty
 
 (* Extends the type environment by the mapping value -> type. *)
 let extend (x: String.t) (t: typ) (env: typenv): typenv =
@@ -104,4 +104,14 @@ let rec infer (e: Ast.expr) (env: typenv): typ =
       | Some t1 -> t1 = t)
     | Val (Num _) -> t = TNum 
     | Val (Bool _) -> t = TBool
-    
+
+
+let infer_verbose (e: Ast.expr) (env: typenv): typ =
+  let res = infer e env in
+    let () = Printf.printf "%s has type %s\n" (Ast.string_of_expr e) (string_of_typ res ) in 
+    res
+
+let check_verbose (e: Ast.expr) (t: typ) (env: typenv): bool =
+  let res = check e t env in
+    let () = Printf.printf "Is %s of type %s? %s\n" (Ast.string_of_expr e) (string_of_typ t) (string_of_bool res) in 
+    res

@@ -7,23 +7,18 @@ open Langoneext.Ast
 (* open Langoneext.Lexer *)
 (* open Langoneext.Parser *)
 
-
 (* Helper functions *)
-let get_ast (s: string): expr = 
-  let lexbuf = Lexing.from_string s in 
-    Parser.prog Lexer.read lexbuf
-
  let compare_ast (input: string) (expected: Ast.expr): test = 
-   "[" ^ input ^ "]" >:: fun _ ->  assert_equal (get_ast input) expected
+   "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Run.get_ast input) expected
    
 let compare_eval (input: string) (expected: Ast.value): test = 
-  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Sem.eval (get_ast input)) expected
+  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Sem.eval (Run.get_ast input)) expected
 
 let compare_inferred_types (input: string) (expected: Types.typ): test = 
-  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.infer (get_ast input) Langoneext.Types.empty) expected
+  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.infer (Run.get_ast input) Langoneext.Types.empty_env) expected
 
 let compare_type_check (input: string) (expected: Types.typ): test = 
-  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.check (get_ast input) expected Langoneext.Types.empty) true
+  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.check (Run.get_ast input) expected Langoneext.Types.empty_env) true
 
 
 (* Tests *)

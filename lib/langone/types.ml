@@ -1,8 +1,11 @@
-(* module Ast = Langone_ast *)
 
 type typ =
   | TNum
   | TBool
+
+let string_of_typ : typ -> string = function
+  | TNum -> "num"
+  | TBool -> "bool"
 
 let rec infer (e: Ast.expr): typ =
   match e with
@@ -29,6 +32,11 @@ let rec infer (e: Ast.expr): typ =
   | Val (Num _) -> TNum
   | Val (Bool _) -> TBool
 
+let infer_verbose (e: Ast.expr): typ =
+  let res = infer e in
+    let () = Printf.printf "%s has type %s\n" (Ast.string_of_expr e) (string_of_typ res) in 
+    res
+
 let rec check (e: Ast.expr) (t: typ): bool = 
   match (e, t) with
   | (BinOp (Add, e1, e2), TNum) -> 
@@ -45,6 +53,7 @@ let rec check (e: Ast.expr) (t: typ): bool =
   | (Val (Bool _), TBool) -> true
   | _ -> false
 
-let string_of_typ : typ -> string = function
-  | TNum -> "num"
-  | TBool -> "bool"
+let check_verbose (e: Ast.expr) (t: typ): bool =
+  let res = check e t in
+    let () = Printf.printf "Is %s of type %s? %s\n" (Ast.string_of_expr e) (string_of_typ t) (string_of_bool res) in 
+    res

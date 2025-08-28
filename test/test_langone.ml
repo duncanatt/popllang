@@ -9,21 +9,21 @@ open Langone.Ast
 
 
 (* Helper functions *)
-let get_ast (s: string): expr = 
+(* let get_ast (s: string): expr = 
   let lexbuf = Lexing.from_string s in 
-    Parser.prog Lexer.read lexbuf
+    Parser.prog Lexer.read lexbuf *)
 
  let compare_ast (input: string) (expected: Ast.expr): test = 
-   "[" ^ input ^ "]" >:: fun _ ->  assert_equal (get_ast input) expected
+   "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Run.get_ast input) expected
    
 let compare_eval (input: string) (expected: Ast.value): test = 
-  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Sem.eval (get_ast input)) expected
+  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Sem.eval (Run.get_ast input)) expected
 
 let compare_inferred_types (input: string) (expected: Types.typ): test = 
-  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.infer (get_ast input)) expected
+  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.infer (Run.get_ast input)) expected
 
 let compare_type_check (input: string) (expected: Types.typ): test = 
-  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.check (get_ast input) expected) true
+  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.check (Run.get_ast input) expected) true
 
 
 (* Tests *)

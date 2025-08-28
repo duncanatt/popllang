@@ -1,5 +1,3 @@
-(* module Ast = Langone_ast *)
-
 
 let rec eval (e: Ast.expr): Ast.value =
   match e with
@@ -24,6 +22,11 @@ let rec eval (e: Ast.expr): Ast.value =
     | Bool b -> Bool (not b)
     | _ -> failwith "You can only negate booleans")
   | Val v -> v
+
+let eval_verbose (e: Ast.expr): Ast.value =
+  let res = eval e in
+  let () = Printf.printf "%s evaluates to %s\n" (Ast.string_of_expr e) (Ast.string_of_val res) in 
+  res
 
 let rec reduce (e: Ast.expr): Ast.expr =
   match e with
@@ -64,7 +67,19 @@ let rec reduce (e: Ast.expr): Ast.expr =
   | Val _ -> 
     failwith ("Value '" ^ (Ast.string_of_expr e) ^ "' does not reduce")
 
+let reduce_verbose (e: Ast.expr): Ast.expr =
+  let res = reduce e in
+    let () = Printf.printf "%s reduces to %s\n" (Ast.string_of_expr e) (Ast.string_of_expr res) in 
+    res
+
 let rec reduce_all (e: Ast.expr): Ast.expr =
   match e with
   | Val _ -> e
   | _ -> (reduce e) |> reduce_all 
+
+let rec reduce_all_verbose (e: Ast.expr): Ast.expr =
+  match e with
+  | Val _ -> (Printf.printf "%s\n" (Ast.string_of_expr e)); e
+  | _ -> (Printf.printf "%s\n" (Ast.string_of_expr e));
+         (reduce e) 
+          |> reduce_all_verbose 
