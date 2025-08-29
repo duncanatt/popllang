@@ -13,7 +13,7 @@
       let _ = Types.check_verbose ast Types.TNum in
       () *)
 
-let _langoneext =  
+(* let _langoneext =  
   let open Langoneext in
     let ast = Run.get_ast 
       (* "let x = (let y = 5 in y) in x + x" *)
@@ -29,7 +29,24 @@ let _langoneext =
     (* let _ = Types.infer_verbose ast Types.empty_env in *)
     (* let _ = Sem.reduce_all_verbose ast in *)
     (* let _ = Types.check_verbose ast Types.TNum Types.empty_env in *)
-    ()
+    () *)
+
+let _langthree =  
+  let open Langthree in
+    let ast = Run.get_ast_verbose 
+    "2 := 1"
+    (* "skip; skip" *)
+    (* "while true do skip" *)
+    (* "skip; skip" *)
+    in
+    ast
+    (* let _ = Sem.eval_verbose ast in *)
+    (* let _ = Sem.reduce_verbose ast in *)
+    (* let _ = Sem.alpha_equiv_verbose ast (Run.get_ast "x + 1") in *)
+    (* let _ = Types.infer_verbose ast Types.empty_env in *)
+    (* let _ = Sem.reduce_all_verbose ast in *)
+    (* let _ = Types.check_verbose ast Types.TNum Types.empty_env in *)
+    (* () *)
 
 
 

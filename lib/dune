@@ -1,5 +1,5 @@
 (library
  (name popllang)
  ; (modules math expr)
- (libraries langone langoneext)
+ (libraries langone langoneext langthree)
  )
