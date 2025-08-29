@@ -20,6 +20,8 @@ let compare_inferred_types (input: string) (expected: Types.typ): test =
 let compare_type_check (input: string) (expected: Types.typ): test = 
   "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.check (Run.get_ast input) expected Langoneext.Types.empty_env) true
 
+let compare_alpha_equivalence (input1: string) (input2: string) (expected: bool): test = 
+  "[" ^ input1 ^ " , " ^ input2 ^ "]" >:: fun _ ->  assert_equal (Sem.alpha_equiv (Run.get_ast input1) (Run.get_ast input2)) expected
 
 (* Tests *)
 
@@ -76,6 +78,16 @@ let tests: test list = [
   compare_type_check "let x = let y = 5 in y in x + x" Types.TNum;
   compare_type_check "let x = 5 in let y = 6 in y + x" Types.TNum;
   compare_type_check "let x = true in let x = 5 in x" Types.TNum;
+
+  (* Alpha Equivalence *)
+  compare_alpha_equivalence "let x = 5 in (let y = 3 in x + 1)" "let y = 5 in (let x = 3 in y + 1)" true;
+  compare_alpha_equivalence "let x = 5 in (let y = 3 in x + 1)" "let x = 5 in (let y = 3 in y + 1)" false;
+  compare_alpha_equivalence "let x = 5 in (let y = 3 in x + 1)" "let x = 5 in (let x = 3 in x + 1)" false;
+  compare_alpha_equivalence "5" "5" true;
+  compare_alpha_equivalence "2" "6" false;
+  compare_alpha_equivalence "x" "x" true;
+  compare_alpha_equivalence "x" "y" false;
+
 ]
 
 let suite: test =

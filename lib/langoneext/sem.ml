@@ -12,7 +12,7 @@ let rec subst (x: string) (v: value) (e: expr): expr =
     let e3 = if x = y then e2 else (subst x v e2) in
       Let (y, (subst x v e1), e3)
   
-let rec eval (e: Ast.expr): Ast.value =
+let rec eval (e: expr): value =
   match e with
   | BinOp (Add, e1, e2) -> 
     (match (eval e1, eval e2) with
@@ -40,12 +40,12 @@ let rec eval (e: Ast.expr): Ast.value =
   | Var x -> failwith (Printf.sprintf "You can only evaluate closed terms; %s is free" x)
   | Val v -> v
 
-let eval_verbose (e: Ast.expr): Ast.value =
+let eval_verbose (e: expr): Ast.value =
   let res = eval e in
   let () = Printf.printf "%s evaluates to %s\n" (Ast.string_of_expr e) (Ast.string_of_val res) in 
   res
 
-  let rec reduce (e: Ast.expr): Ast.expr =
+  let rec reduce (e: expr): expr =
   match e with
   | BinOp (Add, e1, e2) -> 
       let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
@@ -99,19 +99,57 @@ let eval_verbose (e: Ast.expr): Ast.value =
     let () = Printf.printf "Reduce value %s\n" (Ast.string_of_expr e) in
     failwith ("Value '" ^ (Ast.string_of_expr e) ^ "' does not reduce")
 
-let reduce_verbose (e: Ast.expr): Ast.expr =
+let reduce_verbose (e: expr): expr =
   let res = reduce e in
     let () = Printf.printf "%s reduces to %s\n" (Ast.string_of_expr e) (Ast.string_of_expr res) in 
     res
 
-  let rec reduce_all (e: Ast.expr): Ast.expr =
+  let rec reduce_all (e: expr): expr =
   match e with
   | Val _ -> e
   | _ -> (reduce e) |> reduce_all 
 
-let rec reduce_all_verbose (e: Ast.expr): Ast.expr =
+let rec reduce_all_verbose (e: expr): expr =
   match e with
   | Val _ -> (Printf.printf "%s\n" (Ast.string_of_expr e)); e
   | _ -> (Printf.printf "%s\n" (Ast.string_of_expr e));
          (reduce e) 
           |> reduce_all_verbose 
+
+
+(* Substitute variables by expressions (e.g. other variables) *)
+let rec rename (x: string) (e_new: expr) (e: expr): expr =
+  match e with
+  | Val _ -> e
+  | Var y -> 
+    if y = x then (* Match found: replace value *) e_new else (* Leave as is *) e 
+  | BinOp (op, e1, e2) -> BinOp (op, (rename x e_new e1), (rename x e_new e2))
+  | UnOp (op, e) -> UnOp (op, (rename x e_new e))
+  | Let (y, e1, e2) -> 
+    let e3 = if x = y then e2 else (rename x e_new e2) in
+      Let (y, (rename x e_new e1), e3)
+  
+
+(* Alpha Equivalence *)
+let alpha_equiv (e_left: expr) (e_right: expr): bool =
+  let rec alpha_equiv_internal (e_left: expr) (e_right: expr) (counter: int): bool =
+  match (e_left, e_right) with
+  | (Val v1, Val v2) -> v1 = v2
+  | (Var x1, Var x2) -> x1 = x2
+  | (BinOp (op1, e1, e2), BinOp (op2, e3, e4)) -> 
+    (op1 = op2) && (alpha_equiv_internal e1 e3 counter) && (alpha_equiv_internal e2 e4 counter)
+  | (UnOp (op1, e1), UnOp (op2, e2)) ->
+    (op1 = op2) && (alpha_equiv_internal e1 e2 counter)
+  | (Let (x, e1, e2), Let (y, e3, e4)) ->
+    let z = Var ("$" ^ string_of_int counter) in (* unique name, not free in e2 or e4 *)
+    let e1_updated = rename x z e2  in
+    let e4_updated = rename y z e4  in
+      alpha_equiv_internal e1 e3 counter && alpha_equiv_internal e1_updated e4_updated (counter + 1)
+  | _ -> false
+  in
+    alpha_equiv_internal e_left e_right 0
+
+let alpha_equiv_verbose (e_left: expr) (e_right: expr): bool =
+  let res = alpha_equiv e_left e_right in
+    let () = Printf.printf "Are %s and %s alpha-equivalent? %s\n" (Ast.string_of_expr e_left) (Ast.string_of_expr e_right) (string_of_bool res) in 
+    res
