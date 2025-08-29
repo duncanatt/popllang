@@ -1,6 +1,6 @@
+requirements: Opam Package Manager ([install](https://opam.ocaml.org/doc/Install.html#Using-your-system-39-s-package-manager))
 
-
-install dependencies:
+install dependencies (inc. OCaml compiler, dune and other dependencies):
 ```make install```
 
 execute:
