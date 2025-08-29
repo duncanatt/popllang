@@ -1,0 +1,10 @@
+
+
+install dependencies:
+```make install```
+
+execute:
+```make```
+
+run tests:
+```make test```

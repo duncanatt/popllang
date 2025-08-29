@@ -4,6 +4,9 @@ run:
 build:
 	dune build
 
+install:
+	opam install . --deps-only
+
 clean:
 	dune clean
 

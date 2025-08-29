@@ -20,7 +20,10 @@
  (name popllang)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml)
+ (depends 
+  (ocaml (>= 5.0.0))
+  (ounit2 (>= 2.2.0))
+  (menhir (>= 20231231)))
  (tags
   ("add topics" "to describe" your project)))
 
