@@ -14,7 +14,6 @@ rule read = parse
   | white { read lexbuf }
   | "true" { TRUE }
   | "false" { FALSE }
-  (* | "*" { TIMES } *)
   | "+" { ADD }
   | "-" { SUB }
   | "<=" { LEQ }

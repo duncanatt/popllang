@@ -1,21 +1,20 @@
-
-(* Binary operators. *)
+(** Binary operators. *)
 type binop =
   | Add
   | Sub
   | Leq
   | And
 
-(* Unary operator. *)
+(** Unary operator. *)
 type unop =
   | Not  
 
-(* Values. *)
+(** Values. *)
 type value =
   | Num of int
   | Bool of bool
 
-(* Expressions. *)
+(** Expressions. *)
 type expr =
   | Val of value
   | Var of string 
@@ -23,7 +22,7 @@ type expr =
   | UnOp of unop * expr
   | Let of string * expr * expr
 
-(* Pretty prints a binary operator. *)
+(** Pretty prints a binary operator. *)
 let string_of_binop (op: binop) =
   match op with
   | Add -> "+"
@@ -31,18 +30,18 @@ let string_of_binop (op: binop) =
   | Leq -> "<="
   | And -> "&&"
 
-(* Pretty prints a unary operator. *)
+(** Pretty prints a unary operator. *)
 let string_of_unop (op: unop) =
   match op with
   | Not -> "~"
 
-(* Pretty prints a value. *)
+(** Pretty prints a value. *)
 let string_of_val (v: value): string =
   match v with
   | Num n -> string_of_int n
   | Bool b -> string_of_bool b
 
-(* Pretty prints an expression. *)
+(** [string_of_expr e] pretty prints an expression [e]. *)
 let rec string_of_expr (e: expr) =
   match e with
   | Val v -> string_of_val v

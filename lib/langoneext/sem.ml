@@ -1,6 +1,6 @@
-(* module Ast = Langoneext_ast *)
 open Ast
 
+(** [subst x v e] substitues name [s] by value [v] in expression [e] *)
 let rec subst (x: string) (v: value) (e: expr): expr =
   match e with
   | Val _ -> e
@@ -12,6 +12,7 @@ let rec subst (x: string) (v: value) (e: expr): expr =
     let e3 = if x = y then e2 else (subst x v e2) in
       Let (y, (subst x v e1), e3)
   
+(** [eval e s] evaluates the expression [e] returning a value. *)
 let rec eval (e: expr): value =
   match e with
   | BinOp (Add, e1, e2) -> 
@@ -40,12 +41,16 @@ let rec eval (e: expr): value =
   | Var x -> failwith (Printf.sprintf "You can only evaluate closed terms; %s is free" x)
   | Val v -> v
 
+(** [eval_verbose e] evaluates the given expression [e] and prints the evaluation result. It returns the resulting [value] after evaluation. *)
 let eval_verbose (e: expr): Ast.value =
   let res = eval e in
   let () = Printf.printf "%s evaluates to %s\n" (Ast.string_of_expr e) (Ast.string_of_val res) in 
   res
 
-  let rec reduce (e: expr): expr =
+(** [reduce e] performs a single-step reduction on the expression [e].
+
+  @raise Failure if the expression cannot be reduced (i.e., it is a value or stuck). *)
+let rec reduce (e: expr): expr =
   match e with
   | BinOp (Add, e1, e2) -> 
       (match (e1, e2) with
@@ -89,16 +94,19 @@ let eval_verbose (e: expr): Ast.value =
   | Var x -> failwith (Printf.sprintf "You can only reduce closed terms; %s is free" x)
   | Val _ -> failwith ("Value '" ^ (Ast.string_of_expr e) ^ "' does not reduce")
 
+(** [reduce_verbose e] reduces an expression [e] by one step, prints the reduction, and returns the resulting expression. *)
 let reduce_verbose (e: expr): expr =
   let res = reduce e in
     let () = Printf.printf "%s reduces to %s\n" (Ast.string_of_expr e) (Ast.string_of_expr res) in 
     res
 
-  let rec reduce_all (e: expr): expr =
+(** [reduce_all e] reduces expression e, step by step, into a final [value] and returns it as an [expression]. *)
+let rec reduce_all (e: expr): expr =
   match e with
   | Val _ -> e
   | _ -> (reduce e) |> reduce_all 
 
+(** [reduce_all_verbose e] repeatedly reduces the given expression [e] step by step, printing the expression at each step, until it reaches a [value]. Returns the final value as an [expression].*)
 let rec reduce_all_verbose (e: expr): expr =
   match e with
   | Val _ -> (Printf.printf "%s\n" (Ast.string_of_expr e)); e
@@ -107,7 +115,7 @@ let rec reduce_all_verbose (e: expr): expr =
           |> reduce_all_verbose 
 
 
-(* Substitute variables by expressions (e.g. other variables) *)
+(** [rename x e_new e] substitute variable name [x] by expression [e_new] (may be a variable) in expression [e]. *)
 let rec rename (x: string) (e_new: expr) (e: expr): expr =
   match e with
   | Val _ -> e
@@ -120,7 +128,7 @@ let rec rename (x: string) (e_new: expr) (e: expr): expr =
       Let (y, (rename x e_new e1), e3)
   
 
-(* Alpha Equivalence *)
+(** [alpha_equiv e_left e_right] checks if two expressions [e_left] and [e_right] are alpha-equivalent. *)
 let alpha_equiv (e_left: expr) (e_right: expr): bool =
   let rec alpha_equiv_internal (e_left: expr) (e_right: expr) (counter: int): bool =
   match (e_left, e_right) with
@@ -139,6 +147,7 @@ let alpha_equiv (e_left: expr) (e_right: expr): bool =
   in
     alpha_equiv_internal e_left e_right 0
 
+(** [alpha_equiv_verbose e_left e_right] checks if two expressions [e_left] and [e_right] are alpha-equivalent, prints the details.*)
 let alpha_equiv_verbose (e_left: expr) (e_right: expr): bool =
   let res = alpha_equiv e_left e_right in
     let () = Printf.printf "Are %s and %s alpha-equivalent? %s\n" (Ast.string_of_expr e_left) (Ast.string_of_expr e_right) (string_of_bool res) in 

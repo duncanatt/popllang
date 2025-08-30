@@ -1,4 +1,3 @@
-
 (** Data types. *)
 type typ =
   | TNum
@@ -14,11 +13,11 @@ type typenv = typ Env.t
 (** [empty_env] creates an empty type environment. *)
 let empty_env: typenv = Env.empty
 
-(** [extend x t env] extends the type environment [env] by the value [x] of type [t], i.e. [x => t]. *)
+(** [extend x t env] extends the type environment [env] by string [x] mapped to type [t], i.e. [x => t]. *)
 let extend (x: String.t) (t: typ) (env: typenv): typenv =
   Env.add x t env 
 
-(** [lookup x env] returns the corresponding type for mapped by value [x]. *)
+(** [lookup x env] returns the corresponding type mapped by value [x]. *)
 let lookup (x: string) (env: typenv): typ option =
   Env.find_opt x env
 

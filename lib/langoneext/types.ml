@@ -1,38 +1,42 @@
-(* module Ast = Langoneext_ast *)
-
-(* Data types. *)
+(** Data types. *)
 type typ =
   | TNum
   | TBool
 
-(* Define map from variable names to types. *)
+(** Define map from variable names to types. *)
 module Env = Map.Make(String)
 
-(* Type synonym for environment with typ values. *)
+(* Type synonym for environment with [typ] values. *)
 type typenv = typ Env.t
 
-(* Returns empty type environment. *)
+(** [empty_env] creates an empty type environment. *)
 let empty_env: typenv = Env.empty
 
-(* Extends the type environment by the mapping value -> type. *)
+(** [extend x t env] extends the type environment [env] by string [x] mapped to type [t], i.e. [x => t]. *)
 let extend (x: String.t) (t: typ) (env: typenv): typenv =
   Env.add x t env 
 
-(* Returns the corresponding type for mapped by value. *)
+(** [lookup x env] returns the corresponding type mapped by value [x]. *)
 let lookup (x: string) (env: typenv): typ option =
   Env.find_opt x env
 
-(* Returns the stringified value of a type. *)
+(** [string_of_env env t] pretty prints the types. *)
 let string_of_typ: typ -> string = function
   | TBool -> "bool"
   | TNum -> "num"
 
+(** [string_of_env env] pretty prints the typing environment [env]. *)
 let string_of_env (env: typenv) =
   env 
   |> Env.bindings 
   |> List.map (fun (x, t) -> x ^ " : " ^ string_of_typ t)
   |> String.concat ", "
 
+(** [infer e env] infers the type of the expression [e] under the type environment [env]. It returns the type [typ] that [e] is assigned to, or raises an error using [failwith] if the expression is not well-typed in the given environment.
+
+  [check e t env] checks whether the expression [e] has type [t] under the type environment [env]. It returns [true] if [e] has type [t], and [false] otherwise.
+   
+  @raise Failure if the expression is not well-typed. *)
 let rec infer (e: Ast.expr) (env: typenv): typ =
   match e with
   | BinOp (Add, e1, e2) -> 
@@ -106,11 +110,13 @@ let rec infer (e: Ast.expr) (env: typenv): typ =
     | Val (Bool _) -> t = TBool
 
 
+(** [infer_verbose e] infers the type for expression [e], printing verbose output. *)
 let infer_verbose (e: Ast.expr) (env: typenv): typ =
   let res = infer e env in
     let () = Printf.printf "%s has type %s\n" (Ast.string_of_expr e) (string_of_typ res ) in 
     res
 
+(** [typecheck_verbose c] type checks program [c] against type [t], printing verbose output. *)
 let check_verbose (e: Ast.expr) (t: typ) (env: typenv): bool =
   let res = check e t env in
     let () = Printf.printf "Is %s of type %s? %s\n" (Ast.string_of_expr e) (string_of_typ t) (string_of_bool res) in 

@@ -106,8 +106,7 @@ let reduce (p: top_level): (comm * state) =
   let Program (c, s) = p in
     reduce_command c s
 
-(** [reduce_verbose p] reduces a program [p] by one step, prints the reduction, and returns the resulting command and state.
-*)
+(** [reduce_verbose p] reduces a program [p] by one step, prints the reduction, and returns the resulting command and state. *)
 let reduce_verbose (p: top_level): (comm * state) =
   let Program (c, s) = p in
   let c', s' = reduce_command c s in
