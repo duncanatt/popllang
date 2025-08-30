@@ -1,4 +1,3 @@
-
 (* Binary operators. *)
 type binop =
   | Add
@@ -11,11 +10,13 @@ type unop =
   | Not
   | DeRef
 
+type location = string
+
 (* Values. *)
 type value =
   | Num of int
   | Bool of bool
-  | Loc of string
+  | Loc of location
 
 (* Expressions. *)
 type expr =
@@ -30,6 +31,18 @@ type comm =
 | Assign of expr * expr
 | While of expr * comm
 | If of expr * comm * comm
+
+(* State *)
+
+(* Define map from locations to values. *)
+module Env = Map.Make(String)
+
+(* Type synonym for environment containing values. *)
+type state = value Env.t
+
+(* Program consists of commands and some initial states *)
+type top_level = 
+| Program of comm * state
 
 (* Pretty prints a binary operator. *)
 let string_of_binop (op: binop): string =
@@ -73,3 +86,39 @@ let rec string_of_comm (c: comm): string =
   | If (e, c1, c2) ->
     Printf.sprintf "if %s then %s else %s" (string_of_expr e) (string_of_comm c1) (string_of_comm c2)
 
+
+(* State *)
+
+(* Returns empty state. *)
+let empty_state: state = Env.empty
+
+let state_from_list (lst: (location * value) list): state =
+  List.fold_left (fun acc (l, v) -> Env.add l v acc) Env.empty lst
+
+(* Extends the state by the mapping location -> value. *)
+
+let state_extend (l: location) (v: value) (s: state): state =
+    Env.add l v s
+
+(* Extends the state by the mapping location -> value. Only updates if location l exists. *)
+let state_update (l: location) (v: value) (s: state): state =
+  if Env.exists (fun l' _ -> l' = l) s then 
+    (* Found mapping from l, then update *)
+    Env.add l v s
+  else
+    failwith ("Cannot update state for an undefined location" ^ l)
+
+(* Returns the corresponding value. *)
+let lookup (l: location) (s: state): value option =
+  Env.find_opt l s
+
+let string_of_state (s: state) =
+  s 
+  |> Env.bindings 
+  |> List.map (fun (x, v) -> x ^ " -> " ^ string_of_val v)
+  |> String.concat ", "
+
+let string_of_top_level (p: top_level): string =
+  match p with
+  | Program (c, s) -> 
+    Printf.sprintf "{ %s } %s" (string_of_state s) (string_of_comm c)

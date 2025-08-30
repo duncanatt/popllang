@@ -22,8 +22,12 @@ rule read = parse
   | "!" { BANG }
   | "(" { LPAREN }
   | ")" { RPAREN }
+  | "{" { LBRACK }
+  | "}" { RBRACK }
   | ":=" { COLONEQUALS }
   | ";" { SEMICOLON }
+  | "->" { ARROW }
+  | "," { COMMA }
   | "skip" { SKIP }
   | "while" { WHILE }
   | "do" { DO }

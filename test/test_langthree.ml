@@ -2,14 +2,14 @@ open OUnit2
 
 open Langthree
 open Langthree.Ast
-(* open Langthree.Sem *)
-(* open Langthree.Types *)
-(* open Langthree.Lexer *)
-(* open Langthree.Parser *)
 
 (* Helper functions *)
- let compare_ast (input: string) (expected: Ast.comm): test = 
-   "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Run.get_ast input) expected
+ let compare_ast (input: string) (expected_comm: comm) (expected_state: (location * value) list): test = 
+  let Program (commands, states) = Run.get_ast input in
+  let states_match = (Env.bindings states = Env.bindings (state_from_list expected_state)) in
+   "[" ^ input ^ "]" >:: fun _ ->  
+    assert_equal states_match true;
+    assert_equal commands expected_comm
 (*    
 let compare_eval (input: string) (expected: Ast.value): test = 
   "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Sem.eval (Run.get_ast input)) expected
@@ -27,14 +27,22 @@ let compare_alpha_equivalence (input1: string) (input2: string) (expected: bool)
 
 let tests: test list = [
   (* Compare AST outputs *)
-  compare_ast "2 := 1" (Assign ((Val (Num 2)), (Val (Num 1))));
-  compare_ast "2 + 3 := 1" (Assign (BinOp (Add, Val (Num 2), Val (Num 3)), Val (Num 1)));
-  compare_ast "2 - 3 := 1" (Assign (BinOp (Sub, Val (Num 2), Val (Num 3)), Val (Num 1)));
-  compare_ast "~(2 <= 3) := 1" (Assign (UnOp (Not, BinOp (Leq, Val (Num 2), Val (Num 3))), Val (Num 1)));
-  compare_ast "(2 + 4) - (5 + 10) := 2" (Assign (BinOp (Sub, (BinOp (Add, Val (Num 2), Val (Num 4))), (BinOp (Add, Val (Num 5), Val (Num 10)))), Val (Num 2)));
-  compare_ast "1-1 <= 2 + 3 + (~~4 && true) := 2" (Assign (BinOp (Leq, BinOp (Sub, Val (Num 1), Val (Num 1)), BinOp (Add, BinOp (Add, Val (Num 2), Val (Num 3)), BinOp (And, UnOp (Not, UnOp (Not, Val (Num 4))), Val (Bool true)))), Val (Num 2)));
-  compare_ast "while 3 + 2 do skip" (While (BinOp (Add, Val (Num 3), Val (Num 2)), Skip));
-  compare_ast "l3 := !l1; l1 := !l2; l2 := !l3; l3 := 0" (Seq (Seq(Seq(Assign (Val (Loc "l3"), UnOp (DeRef, Val (Loc "l1"))), Assign (Val (Loc "l1"), UnOp (DeRef, Val (Loc "l2")))), Assign (Val (Loc "l2"), UnOp (DeRef, Val (Loc "l3")))), Assign (Val (Loc "l3"), Val (Num 0))));
+  compare_ast "2 := 1" (Assign ((Val (Num 2)), (Val (Num 1)))) [];
+  compare_ast "2 + 3 := 1" (Assign (BinOp (Add, Val (Num 2), Val (Num 3)), Val (Num 1))) [];
+  compare_ast "2 - 3 := 1" (Assign (BinOp (Sub, Val (Num 2), Val (Num 3)), Val (Num 1))) [];
+  compare_ast "~(2 <= 3) := 1" (Assign (UnOp (Not, BinOp (Leq, Val (Num 2), Val (Num 3))), Val (Num 1))) [];
+  compare_ast "(2 + 4) - (5 + 10) := 2" (Assign (BinOp (Sub, (BinOp (Add, Val (Num 2), Val (Num 4))), (BinOp (Add, Val (Num 5), Val (Num 10)))), Val (Num 2))) [];
+  compare_ast "1-1 <= 2 + 3 + (~~4 && true) := 2" (Assign (BinOp (Leq, BinOp (Sub, Val (Num 1), Val (Num 1)), BinOp (Add, BinOp (Add, Val (Num 2), Val (Num 3)), BinOp (And, UnOp (Not, UnOp (Not, Val (Num 4))), Val (Bool true)))), Val (Num 2))) [];
+  compare_ast "while 3 + 2 do skip" (While (BinOp (Add, Val (Num 3), Val (Num 2)), Skip)) [];
+  compare_ast "l3 := !l1; l1 := !l2; l2 := !l3; l3 := 0" (Seq (Seq(Seq(Assign (Val (Loc "l3"), UnOp (DeRef, Val (Loc "l1"))), Assign (Val (Loc "l1"), UnOp (DeRef, Val (Loc "l2")))), Assign (Val (Loc "l2"), UnOp (DeRef, Val (Loc "l3")))), Assign (Val (Loc "l3"), Val (Num 0)))) [];
+
+  (* Compare AST including states *)
+  compare_ast "{} 2 := 1" (Assign ((Val (Num 2)), (Val (Num 1)))) [];
+  compare_ast "{l1 -> true} 2 := 1" (Assign ((Val (Num 2)), (Val (Num 1)))) [("l1", Bool true)];
+  compare_ast "{l1 -> true, l2 -> 4} 2 := 1" (Assign ((Val (Num 2)), (Val (Num 1)))) [("l1", Bool true); ("l2", Num 4)];
+  compare_ast "{l1 -> true, l2 -> 4} 2 := 1" (Assign ((Val (Num 2)), (Val (Num 1)))) [("l2", Num 4); ("l1", Bool true)];
+  compare_ast "{l1 -> true, l2 -> 4, abc -> 444} 2 := 1" (Assign ((Val (Num 2)), (Val (Num 1)))) [("l2", Num 4); ("abc", Num 444); ("l1", Bool true)];
+
   
   (* 
   
