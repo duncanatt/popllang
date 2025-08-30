@@ -1,8 +1,9 @@
-(* 
+
 (* Data types. *)
 type typ =
   | TNum
   | TBool
+  | TRef of typ
 
 (* Define map from variable names to types. *)
 module Env = Map.Make(String)
@@ -22,95 +23,110 @@ let lookup (x: string) (env: typenv): typ option =
   Env.find_opt x env
 
 (* Returns the stringified value of a type. *)
-let string_of_typ: typ -> string = function
+let rec string_of_typ: typ -> string = function
   | TBool -> "bool"
   | TNum -> "num"
+  | TRef t -> "ref(" ^ string_of_typ t ^ ")"
 
+(* Pretty print typing environment. *)
 let string_of_env (env: typenv) =
   env 
   |> Env.bindings 
   |> List.map (fun (x, t) -> x ^ " : " ^ string_of_typ t)
   |> String.concat ", "
 
-let rec infer (e: Ast.expr) (env: typenv): typ =
-  match e with
-  | BinOp (Add, e1, e2) -> 
-    (match (infer e1 env, infer e2 env) with
+
+(* fetch_type_of_loc is used to find the type of a single location l in state s. Cyclic reference locations are detected using known_locations. *)
+let rec fetch_type_of_loc (l: Ast.location) (s: Ast.state) (known_locations: Ast.location list): typ =
+  match Ast.lookup l s with
+  | None -> failwith ("Cannot find location " ^ l ^ " in state.")
+  | Some v -> 
+    match v with
+    | Ast.Num _ -> TNum
+    | Ast.Bool _ -> TBool
+    | Ast.Loc l' -> 
+      if List.mem l' known_locations then
+        failwith ("Cyclic reference detected in location " ^ l ^ " pointing to " ^ l' ^ ".")
+      else
+        (* References other locations in the state, so has type TRef *)
+        TRef (fetch_type_of_loc l' s (known_locations @ [l]))
+
+(* Build the Sigma environment, mapping all locations from the state to their types. *)
+(* Does not follow Slide 139 precisely, since the notes assume the Sigma upfront, but here we infer it. *)
+let types_of_loc_in_state (s: Ast.state): typenv =
+  Env.fold (fun l v acc -> 
+    match v with
+    | Ast.Num _ -> extend l TNum acc
+    | Ast.Bool _ -> extend l TBool acc
+    | Ast.Loc l' -> extend l  (TRef (fetch_type_of_loc l' s [])) acc
+  ) s empty_env
+
+let rec infer_expr (e: Ast.expr) (env: typenv): typ =
+  match e with 
+  | Val v -> 
+    (match v with
+    | Ast.Num _ -> TNum (* TNum *)
+    | Ast.Bool _ -> TBool (* TSub *)
+    | Ast.Loc l -> (* TLoc *)
+      (match lookup l env with
+      | Some t -> TRef t
+      | None -> failwith ("Location " ^ l ^ " not found in type environment (sigma)")))
+  | BinOp (Add, e1, e2) -> (* TAdd *)
+    (match (infer_expr e1 env, infer_expr e2 env) with
     | (TNum, TNum) -> TNum
     | (_, _) -> failwith ("Cannot infer type for " ^ (Ast.string_of_expr e)))
-  | BinOp (Sub, e1, e2) -> 
-    (match (infer e1 env, infer e2 env) with
+  | BinOp (Sub, e1, e2) -> (* TSub *)
+    (match (infer_expr e1 env, infer_expr e2 env) with
     | (TNum, TNum) -> TNum
     | (_, _) -> failwith ("Cannot infer type for " ^ (Ast.string_of_expr e)))
-  | BinOp (Leq, e1, e2) -> 
-    (match (infer e1 env, infer e2 env) with
+  | BinOp (Leq, e1, e2) -> (* TLeq *)
+    (match (infer_expr e1 env, infer_expr e2 env) with
     | (TNum, TNum) -> TBool
     | (_, _) -> failwith ("Cannot infer type for " ^ (Ast.string_of_expr e)))
-  | BinOp (And, e1, e2) -> 
-    (match (infer e1 env, infer e2 env) with
+  | BinOp (And, e1, e2) -> (* TAnd *)
+    (match (infer_expr e1 env, infer_expr e2 env) with
     | (TBool, TBool) -> TBool
     | (_, _) -> failwith ("Cannot infer type for " ^ (Ast.string_of_expr e)))
-  | UnOp (Not, e) ->
-    (match (infer e env) with
+  | UnOp (Not, e) -> (* TNot *)
+    (match (infer_expr e env) with
     | TBool -> TBool
     | _ -> failwith ("Cannot infer type for " ^ (Ast.string_of_expr e)))
-  | Let (x, e1, e2) ->
-    let t1 = infer e1 env in
-      let env2 = extend x t1 env in
-        infer e2 env2
-  | Var x ->
-    (match lookup x env with 
-      | None -> failwith ("Cannot infer type for undefined variable " ^ x)
-      | Some t -> t)
-  | Val (Num _) -> TNum
-  | Val (Bool _) -> TBool
+  | UnOp (DeRef, e) -> (* TDer *)
+    (match (infer_expr e env) with
+    | TRef t -> t
+    | _ -> failwith ("Cannot dereference non-location expression " ^ (Ast.string_of_expr e)))
+  
 
-  and check (e: Ast.expr) (t: typ) (env: typenv): bool = 
-  (* let rec check (e: Ast.expr) (t: typ) (env: typenv): bool =  *)
-    match e with
-    | BinOp (Add, e1, e2) -> 
-        if t = TNum then
-          (check e1 TNum env) && (check e2 TNum env)
-        else
-          false
-    | BinOp (Sub, e1, e2) -> 
-        if t = TNum then
-          (check e1 TNum env) && (check e2 TNum env)
-        else 
-          false
-    | BinOp (Leq, e1, e2) -> 
-      if t = TBool then
-        (check e1 TNum env) && (check e2 TNum env)
-      else
-        false
-    | BinOp (And, e1, e2) -> 
-      if t = TBool then
-        (check e1 TBool env) && (check e2 TBool env)
-      else
-        false
-    | UnOp (Not, e) ->
-      if t = TBool then
-        check e TBool env
-      else
-        false
-    | Let (x, e1, e2) ->
-        let t1 = infer e1 env in
-          let env2 = extend x t1 env in
-            check e2 t env2
-    | Var x ->
-      (match lookup x env with 
-      | None -> failwith ("Cannot infer type for undefined variable " ^ x)
-      | Some t1 -> t1 = t)
-    | Val (Num _) -> t = TNum 
-    | Val (Bool _) -> t = TBool
+(* Checks that the commands has well-formed types. Commands do not have explicit types so this functions doesn not infer or check against an explicit type. *)
+let rec typecheck_command (c: Ast.comm) (env: typenv): unit =
+    match c with
+    | Skip -> () (* TSkip *)
+    | Assign (e1, e2) -> (* TAss *)
+        (let t' = infer_expr e1 env in
+        match t' with
+        | TRef t -> 
+          (if (infer_expr e2 env) <> t then 
+            failwith ("Type mismatch in assignment, expected " ^ string_of_typ t ^ " but got " ^ string_of_typ (infer_expr e2 env)))
+        | _ -> failwith ("You can only assign to locations, got " ^ (Ast.string_of_expr e1) ^ " of type " ^ string_of_typ t'))
+    | Seq (c1, c2) -> (* TSeq *)
+        (typecheck_command c1 env; typecheck_command c2 env)
+    | If (e, c1, c2) -> (* TIf *)
+        (if (infer_expr e env) <> TBool then 
+          failwith ("If condition must be boolean, got " ^ (Ast.string_of_expr e) ^ " of type " ^ string_of_typ (infer_expr e env));
+        typecheck_command c1 env; typecheck_command c2 env)
+    | While (e, c) -> (* TWhl *)
+        (if (infer_expr e env) <> TBool then 
+          failwith ("While condition must be boolean, got " ^ (Ast.string_of_expr e) ^ " of type " ^ string_of_typ (infer_expr e env));
+        typecheck_command c env)
 
-
-let infer_verbose (e: Ast.expr) (env: typenv): typ =
-  let res = infer e env in
-    let () = Printf.printf "%s has type %s\n" (Ast.string_of_expr e) (string_of_typ res ) in 
-    res
-
-let check_verbose (e: Ast.expr) (t: typ) (env: typenv): bool =
-  let res = check e t env in
-    let () = Printf.printf "Is %s of type %s? %s\n" (Ast.string_of_expr e) (string_of_typ t) (string_of_bool res) in 
-    res *)
+(* Type check programs. Types for expressions are inferred as needed. *)
+let typecheck (c: Ast.top_level): unit =
+  let Ast.Program (commands, states) = c in
+  let sigma = types_of_loc_in_state states in
+  typecheck_command commands sigma
+(*   
+  try 
+    let () = typecheck_command commands sigma in
+    Printf.printf "Typecheck successful for: %s\n" (Ast.string_of_top_level c)
+  with Failure msg ->
+    Printf.printf "Typecheck failed for: %s\n%s\n" (Ast.string_of_top_level c) msg *)

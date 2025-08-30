@@ -27,7 +27,7 @@ let rec eval_expr (e: expr) (s: state): value =
       | Loc loc -> 
           (match Ast.lookup loc s with
           | Some v -> v
-          | None -> failwith ("Location " ^ loc ^ " not found in state"))
+          | None -> failwith ("Location " ^ loc ^ " not found in state (out-of bounds dereference)"))
       | _ -> failwith "You can only dereference locations")
   | Val v -> v (* EVal *)
 
@@ -111,7 +111,7 @@ let rec reduce_all_verbose (p: top_level): state =
   let Program (c, s) = p in
   match c with
   | Skip ->
-    (Printf.printf "%s\n" (Ast.string_of_state s)); 
+    (Printf.printf "%s\n" (Ast.string_of_top_level p)); 
     s
   | _ -> 
     (Printf.printf "%s\n" (Ast.string_of_top_level p));

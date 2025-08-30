@@ -25,15 +25,18 @@ let compare_reduce_all_with_eval (input: string): test =
   let states_match = (Env.bindings final_state_eval = Env.bindings final_state_reduce_all) in
   "[" ^ input ^ "]" >:: fun _ -> assert_equal states_match true
 
-(*    
+let compare_typechecking_result (input: string) (expected_res: bool): test = 
+  try 
+    let () = Types.typecheck (Run.get_ast input) in
+    (* Typecheck successful *)
+    "[" ^ input ^ "]" >:: fun _ -> assert_bool "expected correct types" expected_res
+  with Failure _ ->
+    (* Typecheck failed *)
+    "[" ^ input ^ "]" >:: fun _ -> assert_bool "expected incorrect types" (not expected_res)
+    
 
-let compare_inferred_types (input: string) (expected: Types.typ): test = 
-  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.infer (Run.get_ast input) Langoneext.Types.empty_env) expected
 
-let compare_type_check (input: string) (expected: Types.typ): test = 
-  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.check (Run.get_ast input) expected Langoneext.Types.empty_env) true
 
-*)
 
 (* Tests *)
 
@@ -106,34 +109,21 @@ let tests: test list = [
   compare_reduce_all_with_eval "{l1 -> 3, l2 -> 4} l1 := !l2; l2 := 5; skip";
   compare_reduce_all_with_eval "{l1 -> 3, l2 -> 4} while (!l1) <= !l2 do (l1 := !l1 + 1; l2 := !l2 - 1)";
   
-  (* 
-  (* Infer types *)
-  compare_inferred_types "2" Types.TNum;
-  compare_inferred_types "2 + 3" Types.TNum;
-  compare_inferred_types "2 - 3" Types.TNum;
-  compare_inferred_types "~(2 <= 3)" Types.TBool;
-  compare_inferred_types "(2 + 4) - (5 + 10)" Types.TNum;
-  compare_inferred_types "(1-1 <= (2 + 3)) && (~~false && true)" Types.TBool;
-  compare_inferred_types "let x = 2 in x" Types.TNum;
-  compare_inferred_types "let x = (let y = 5 in y) in x + x" Types.TNum;
-  compare_inferred_types "let x = let y = 5 in y in x + x" Types.TNum;
-  compare_inferred_types "let x = 5 in let y = 6 in y + x" Types.TNum;
-  compare_inferred_types "let x = true in let x = 5 in x" Types.TNum;
+  (* Type checking tests *)
+  compare_typechecking_result "skip" true;
+  compare_typechecking_result "{l1 -> 4} l1 := !l1 + !l1" true;
+  compare_typechecking_result "{l1 -> 5, l2 -> 0} l2 := 0; while (1 <= !l1) do (l2 := !l1 + !l2; l1 := !l1 - 1)" true;
+  compare_typechecking_result "while false do skip" true;
+  compare_typechecking_result "{l1 -> 3, l2 -> 4} while (!l1) <= !l2 do (l1 := !l1 + 1; l2 := !l2 - 1)" true;
+  compare_typechecking_result "{l1 -> l2, l2 -> 5, l3 -> l2} !l1 := 0; l2 := 1; l3 := !(!l1)" false;
+  compare_typechecking_result "{l1 -> true} l1 := 5 + !l1" false;
+  compare_typechecking_result "{l1 -> l2} l1 := 5 + !(!l2)" false;
 
-  (* Type check *)
-  compare_type_check "2" Types.TNum;
-  compare_type_check "2 + 3" Types.TNum;
-  compare_type_check "2 - 3" Types.TNum;
-  compare_type_check "~(2 <= 3)" Types.TBool;
-  compare_type_check "(2 + 4) - (5 + 10)" Types.TNum;
-  compare_type_check "(1-1 <= (2 + 3)) && (~~false && true)" Types.TBool;
-  compare_type_check "let x = 2 in x" Types.TNum;
-  compare_type_check "let x = (let y = 5 in y) in x + x" Types.TNum;
-  compare_type_check "let x = let y = 5 in y in x + x" Types.TNum;
-  compare_type_check "let x = 5 in let y = 6 in y + x" Types.TNum;
-  compare_type_check "let x = true in let x = 5 in x" Types.TNum;
- *)
-
+  (* Ill behaved examples from notes *)
+  compare_typechecking_result "{l1 -> true} l1 := 5 + !l1" false;
+  compare_typechecking_result "{l1 -> l2} l1 := 5 + !(!l2)" false;
+  compare_typechecking_result "{l1 -> true, l2 -> 0} while 1 <= !l1 do (l2 := 4 + !l2; l1 := !l1 - 1)" false;
+  compare_typechecking_result "{l1 -> 3, l2 -> 0, l3 -> 0} l2 := 2 + !l1; l1 := true; l3 := 2 + !l1" false;
 ]
 
 let suite: test =

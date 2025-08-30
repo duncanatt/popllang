@@ -92,13 +92,17 @@ let rec string_of_comm (c: comm): string =
 (* Returns empty state. *)
 let empty_state: state = Env.empty
 
-let state_from_list (lst: (location * value) list): state =
-  List.fold_left (fun acc (l, v) -> Env.add l v acc) Env.empty lst
-
 (* Extends the state by the mapping location -> value. *)
 
 let state_extend (l: location) (v: value) (s: state): state =
-    Env.add l v s
+    if Env.exists (fun l' _ -> l' = l) s then 
+      failwith ("Cannot extend state for an already defined location " ^ l)
+    else
+      (* No mapping from l, then add *)
+      Env.add l v s
+
+let state_from_list (lst: (location * value) list): state =
+  List.fold_left (fun acc (l, v) -> state_extend l v acc) Env.empty lst
 
 (* Extends the state by the mapping location -> value. Only updates if location l exists. *)
 let state_update (l: location) (v: value) (s: state): state =
@@ -111,6 +115,9 @@ let state_update (l: location) (v: value) (s: state): state =
 (* Returns the corresponding value. *)
 let lookup (l: location) (s: state): value option =
   Env.find_opt l s
+
+
+(* Pretty prints a state. *)
 
 let string_of_state (s: state) =
   let state_string = 
