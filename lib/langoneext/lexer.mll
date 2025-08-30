@@ -3,7 +3,7 @@ open Parser
 }
 
 (* Token patterns. *)
-let white = [' ' '\t']+
+let white = [' ' '\t' '\n']+
 let digit = ['0'-'9']
 let num = digit+
 let letter = ['a'-'z' 'A'-'Z']

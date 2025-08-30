@@ -43,9 +43,54 @@ let tests: test list = [
   compare_ast "{l1 -> true, l2 -> 4} 2 := 1" (Assign ((Val (Num 2)), (Val (Num 1)))) [("l2", Num 4); ("l1", Bool true)];
   compare_ast "{l1 -> true, l2 -> 4, abc -> 444} 2 := 1" (Assign ((Val (Num 2)), (Val (Num 1)))) [("l2", Num 4); ("abc", Num 444); ("l1", Bool true)];
 
-  
+  let c = (While
+    (BinOp (Leq,
+      UnOp (DeRef,
+        Val (Loc "l1")),
+      UnOp (DeRef,
+        Val (Loc "l2"))),
+    Seq
+      (Assign (Val (Loc "l1"),
+        BinOp (Add,
+        UnOp (DeRef,
+          Val (Loc "l1")),
+        Val (Num 1))),
+      Assign (Val (Loc "l2"),
+      BinOp (Sub,
+        UnOp (DeRef,
+        Val (Loc "l2")),
+        Val (Num 1)))))) in
+  compare_ast 
+    "{l1 -> 3, l2 -> 4} while !l1 <= (!l2) do (l1 := !l1 + 1; l2 := !l2 - 1)" 
+    c 
+    [("l1", Num 3); ("l2", Num 4)];
+
+
   (* 
+
+    (* "{l1 -> 4} l1 := !l1 + !l1" {l1 -> 8} *)
   
+    (* Example 61, Swapping Values *)
+  "{l1 -> 5, l2 -> 3, l3 -> 0} l3 := !l1; l1 := !l2; l2 := !l3; l3 := 0"
+    in
+    (* {l1 -> 3, l2 -> 5, l3 -> 0} *)
+
+
+        (* Example 62, Sum *)
+    (* "{l1 -> 5, l2 -> 0} l2 := 0; while (1 <= !l1) do (l2 := !l1 + !l2; l1 := !l1 - 1) " *)
+(* {l1 -> 0, l2 -> 15} *)
+
+    (* Example 63, Aliasing, v2 *)
+    (* "{l1 -> l4, l2 -> 5, l3 -> 0, l4 -> 3} !l1 := 0; l2 := 1; l3 := !(!l1)" *)
+    (* {l1 -> l4, l2 -> 1, l3 -> 0, l4 -> 0} *)
+
+
+    (* "skip; skip"  {} *)
+    (* *"{l1 -> 3} l1 := 2; skip" {l1 -> 2} *)
+    (* "{l1 -> 3, l2 -> 4} l1 := !l2; l2 := 5; skip" {l1 -> 4, l2 -> 5} *)
+    (* "{l1 -> 3, l2 -> 4} while (!l1) <= !l2 do (l1 := !l1 + 1; l2 := !l2 - 1)"  *) (* {l1 -> 4, l2 -> 3} *)
+
+
   (* Compare AST outputs *)
   compare_eval "2" (Num 2);
   compare_eval "2 + 3" (Num 5);

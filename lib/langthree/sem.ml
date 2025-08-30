@@ -1,146 +1,119 @@
 open Ast
 
-let _ = Num 3
-
-(* let rec eval (e: expr): value =
+let rec eval_expr (e: expr) (s: state): value =
   match e with
-  | BinOp (Add, e1, e2) -> 
-    (match (eval e1, eval e2) with
+  | BinOp (Add, e1, e2) -> (* EAdd *)
+    (match (eval_expr e1 s, eval_expr e2 s) with
     | (Num n1, Num n2) -> Num (n1 + n2)
-    | (_, _) -> failwith "You can only add two numerals")
-  | BinOp (Sub, e1, e2) -> 
-    (match (eval e1, eval e2) with
+    | (_, _) -> failwith ("You can only add two numerals in " ^ (Ast.string_of_expr e)))
+  | BinOp (Sub, e1, e2) -> (* ESub *)
+    (match (eval_expr e1 s, eval_expr e2 s) with
     | (Num n1, Num n2) -> Num (n1 - n2)
     | (_, _) -> failwith "You can only subtract two numerals")
-  | BinOp (Leq, e1, e2) -> 
-    (match (eval e1, eval e2) with
+  | BinOp (Leq, e1, e2) -> (* ELeq*)
+    (match (eval_expr e1 s, eval_expr e2 s) with
     | (Num n1, Num n2) -> Bool (n1 <= n2)
     | (_, _) -> failwith "You can only compare two numerals")
-  | BinOp (And, e1, e2) -> 
-    (match (eval e1, eval e2) with
+  | BinOp (And, e1, e2) -> (* EAnd *)
+    (match (eval_expr e1 s, eval_expr e2 s) with
     | (Bool b1, Bool b2) -> Bool (b1 && b2)
     | (_, _) -> failwith "You can only compare two numerals")
-  | UnOp (Not, e) ->
-    (match (eval e) with
+  | UnOp (Not, e) -> (* ENot *)
+    (match (eval_expr e s) with
     | Bool b -> Bool (not b)
     | _ -> failwith "You can only negate booleans")
-  | Let(x, e1, e2) ->
-      let v = eval e1 in
-        eval (subst x v e2)
-  | Var x -> failwith (Printf.sprintf "You can only evaluate closed terms; %s is free" x)
-  | Val v -> v *)
+  | UnOp (DeRef, l) -> (* EDer *)
+      (match eval_expr l s with
+      | Loc loc -> 
+          (match Ast.lookup loc s with
+          | Some v -> v
+          | None -> failwith ("Location " ^ loc ^ " not found in state"))
+      | _ -> failwith "You can only dereference locations")
+  | Val v -> v (* EVal *)
 
-(* 
-let eval_verbose (e: expr): Ast.value =
-  let res = eval e in
-  let () = Printf.printf "%s evaluates to %s\n" (Ast.string_of_expr e) (Ast.string_of_val res) in 
-  res
+let rec eval_command (c: comm) (s: state): state =
+  match c with
+  | Skip -> s (* ESkip *)
+  | Assign (e1, e2) -> (* EAssgn *)
+      (match eval_expr e1 s with
+      | Loc l ->
+          let v = eval_expr e2 s in
+          Ast.state_update l v s
+      | _ -> failwith "You can only assign to locations")
+  | Seq (c1, c2) -> (* ESeq *)
+    let s' = eval_command c1 s in
+    let s'' = eval_command c2 s' in
+      s''
+  | While (e, c) -> (* EWhl1, EWhl2 *)
+    (match eval_expr e s with
+    | Bool false -> s (* EWhl1 *)
+    | Bool true -> (* EWhl2 *)
+        (let s' = eval_command c s in
+        let s'' = eval_command (While (e, c)) s' in
+        s'')
+    | _ -> failwith "You can only use booleans in while conditions")
+  | If (e, c1, c2) -> (* EThen, EElse *)
+    (match eval_expr e s with
+    | Bool true -> eval_command c1 s (* EThen *)
+    | Bool false -> eval_command c2 s (* EElse *)
+    | _ -> failwith "You can only use booleans in if conditions")
 
-  let rec reduce (e: expr): expr =
-  match e with
-  | BinOp (Add, e1, e2) -> 
-      let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
-      (match (e1, e2) with
-      | (Val (Num n1), Val (Num n2)) ->  Val (Num (n1 + n2))          (* rAdd1*)
-      | (Val _, Val _) -> failwith ("Expression '" ^ (Ast.string_of_expr e) ^ "' stuck")
-      | (Val v, e2)                  -> BinOp (Add, Val v, (reduce e2))   (* rAdd3*)   
-      | _                            -> BinOp (Add, (reduce e1), e2)  (* rAdd2*)
-      )  
-  | BinOp (Sub, e1, e2) ->
-      let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
-      (match (e1, e2) with
-      | (Val (Num n1), Val (Num n2)) ->  Val (Num (n1 - n2))          (* rSub1*)
-      | (Val _, Val _) -> failwith ("Expression '" ^ (Ast.string_of_expr e) ^ "' stuck")
-      | (Val v, e2)                  -> BinOp (Sub, Val v, (reduce e2))   (* rSub3*)   
-      | _                            -> BinOp (Sub, (reduce e1), e2)  (* rSub2*)
-      )
-  | BinOp (Leq, e1, e2) -> 
-    let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
-    (match (e1, e2) with
-      | (Val (Num n1), Val (Num n2)) ->  Val (Bool (n1 <= n2))          (* rLeq1*)
-      | (Val _, Val _) -> failwith ("Expression '" ^ (Ast.string_of_expr e) ^ "' stuck")
-      | (Val v, e2)                  -> BinOp (Leq, Val v, (reduce e2))   (* rLeq3*)   
-      | _                            -> BinOp (Leq, (reduce e1), e2)  (* rLeq2*)
-      )
-  | BinOp (And, e1, e2) ->
-    let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
-    (match (e1, e2) with
-      | (Val (Bool b1), Val (Bool b2)) ->  Val (Bool (b1 && b2))          (* rAnd1*)
-      | (Val _, Val _) -> failwith ("Expression '" ^ (Ast.string_of_expr e) ^ "' stuck")
-      | (Val v, e2)                  -> BinOp (And, Val v, (reduce e2))   (* rAnd3*)   
-      | _                            -> BinOp (And, (reduce e1), e2)  (* rAnd2*)
-      )
-  | UnOp (Not, e) ->
-    let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
-    (match e with
-    | Val (Bool b) -> Val (Bool (not b))
-    | Val _ -> failwith ("Expression '" ^ (Ast.string_of_expr e) ^ "' stuck")
-    | _ -> UnOp (Not, reduce e)
-    )
-  | Let (x, e1, e2) ->
-    let () = Printf.printf "Reduce %s\n" (Ast.string_of_expr e) in
-    (match (e1, e2) with
-    | (Val v, e2) -> subst x v e2
-    | (e1, e2) -> Let (x, reduce e1, e2)
-    )
-  | Var x -> 
-    let () = Printf.printf "Reduce variable %s\n" (Ast.string_of_expr e) in
-    failwith (Printf.sprintf "You can only reduce closed terms; %s is free" x)
-  | Val _ -> 
-    let () = Printf.printf "Reduce value %s\n" (Ast.string_of_expr e) in
-    failwith ("Value '" ^ (Ast.string_of_expr e) ^ "' does not reduce")
+let eval (p: top_level): Ast.state =
+  let Program (c, s) = p in
+  eval_command c s
 
-let reduce_verbose (e: expr): expr =
-  let res = reduce e in
-    let () = Printf.printf "%s reduces to %s\n" (Ast.string_of_expr e) (Ast.string_of_expr res) in 
-    res
+let eval_verbose (p: top_level): Ast.state =
+  let Program (c, s) = p in
+  let s_res = eval_command c s in
+  let () = Printf.printf "%s evaluates to %s\n" (Ast.string_of_top_level (Program (c, s))) (Ast.string_of_state s_res) in 
+  s_res
 
-  let rec reduce_all (e: expr): expr =
-  match e with
-  | Val _ -> e
-  | _ -> (reduce e) |> reduce_all 
+let rec reduce_command (c: comm) (s: state): comm * state =
+  match c with
+  | Skip -> (Skip, s) (* RSkip *)
+  | Assign (e1, e2) -> (* RAss *)  
+    (match eval_expr e1 s with
+    | Loc l1 -> 
+      (let v = eval_expr e2 s in
+      (Skip, (state_update l1 v s)))  
+    | _ -> failwith ("You can only assign to locations in " ^ (Ast.string_of_comm c)))
+  | Seq (Skip, c') -> (c', s) (* RSeq1 *)
+  | Seq (c1, c2) -> (* RSeq2 *)
+      let (c3, s') = reduce_command c1 s in
+      (Seq (c3, c2), s')
+  | If (e, c1, c2) -> (* RThen, RElse *)
+    (match eval_expr e s with
+    | Bool true -> (c1, s)  (* RThen *)
+    | Bool false -> (c2, s) (* RElse *)
+    | _ -> failwith ("You can only use booleans in if conditions in " ^ (Ast.string_of_comm c)))
+  | While (e, c) -> (* RWhl *)
+    (If (e, Seq (c, While (e, c)), Skip), s)
 
-let rec reduce_all_verbose (e: expr): expr =
-  match e with
-  | Val _ -> (Printf.printf "%s\n" (Ast.string_of_expr e)); e
-  | _ -> (Printf.printf "%s\n" (Ast.string_of_expr e));
-         (reduce e) 
-          |> reduce_all_verbose 
+let reduce (p: top_level): (comm * state) =
+  let Program (c, s) = p in
+    reduce_command c s
 
+let reduce_verbose (p: top_level): (comm * state) =
+  let Program (c, s) = p in
+  let c', s' = reduce_command c s in
+    let () = Printf.printf "%s reduces to %s\n" (Ast.string_of_top_level p) (Ast.string_of_top_level (Program (c', s'))) in 
+    (c', s')
 
-(* Substitute variables by expressions (e.g. other variables) *)
-let rec rename (x: string) (e_new: expr) (e: expr): expr =
-  match e with
-  | Val _ -> e
-  | Var y -> 
-    if y = x then (* Match found: replace value *) e_new else (* Leave as is *) e 
-  | BinOp (op, e1, e2) -> BinOp (op, (rename x e_new e1), (rename x e_new e2))
-  | UnOp (op, e) -> UnOp (op, (rename x e_new e))
-  | Let (y, e1, e2) -> 
-    let e3 = if x = y then e2 else (rename x e_new e2) in
-      Let (y, (rename x e_new e1), e3)
-  
+let rec reduce_all (p: top_level): state =
+  let Program (c, s) = p in
+  match c with
+  | Skip -> s
+  | _ -> 
+    let c', s' = (reduce p) in
+      reduce_all (Program (c', s')) 
 
-(* Alpha Equivalence *)
-let alpha_equiv (e_left: expr) (e_right: expr): bool =
-  let rec alpha_equiv_internal (e_left: expr) (e_right: expr) (counter: int): bool =
-  match (e_left, e_right) with
-  | (Val v1, Val v2) -> v1 = v2
-  | (Var x1, Var x2) -> x1 = x2
-  | (BinOp (op1, e1, e2), BinOp (op2, e3, e4)) -> 
-    (op1 = op2) && (alpha_equiv_internal e1 e3 counter) && (alpha_equiv_internal e2 e4 counter)
-  | (UnOp (op1, e1), UnOp (op2, e2)) ->
-    (op1 = op2) && (alpha_equiv_internal e1 e2 counter)
-  | (Let (x, e1, e2), Let (y, e3, e4)) ->
-    let z = Var ("$" ^ string_of_int counter) in (* unique name, not free in e2 or e4 *)
-    let e1_updated = rename x z e2  in
-    let e4_updated = rename y z e4  in
-      alpha_equiv_internal e1 e3 counter && alpha_equiv_internal e1_updated e4_updated (counter + 1)
-  | _ -> false
-  in
-    alpha_equiv_internal e_left e_right 0
-
-let alpha_equiv_verbose (e_left: expr) (e_right: expr): bool =
-  let res = alpha_equiv e_left e_right in
-    let () = Printf.printf "Are %s and %s alpha-equivalent? %s\n" (Ast.string_of_expr e_left) (Ast.string_of_expr e_right) (string_of_bool res) in 
-    res *)
+let rec reduce_all_verbose (p: top_level): state =
+  let Program (c, s) = p in
+  match c with
+  | Skip ->
+    (Printf.printf "%s\n" (Ast.string_of_state s)); 
+    s
+  | _ -> 
+    (Printf.printf "%s\n" (Ast.string_of_top_level p));
+    let c', s' = (reduce p) in  
+      reduce_all_verbose (Program (c', s'))

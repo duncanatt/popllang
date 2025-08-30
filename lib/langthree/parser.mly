@@ -36,11 +36,11 @@ open Ast
 
 %left SEMICOLON
 %left AND
-%right BANG
 %right NOT
 %left LEQ
 %left ADD
 %left SUB
+%right BANG
 
 // Main program production.
 %start <top_level> prog
@@ -79,6 +79,7 @@ command:
   | e1 = expr; COLONEQUALS; e2 = expr { Assign (e1, e2) }
   | WHILE; e = expr; DO; c = command { While (e, c) }
   | IF; e = expr; THEN; c1 = command; ELSE; c2 = command { If (e, c1, c2) }
+  | LPAREN; c = command; RPAREN { c }
   ;
 
 // State as pairs.

@@ -113,12 +113,14 @@ let lookup (l: location) (s: state): value option =
   Env.find_opt l s
 
 let string_of_state (s: state) =
-  s 
-  |> Env.bindings 
-  |> List.map (fun (x, v) -> x ^ " -> " ^ string_of_val v)
-  |> String.concat ", "
+  let state_string = 
+    s 
+    |> Env.bindings 
+    |> List.map (fun (x, v) -> x ^ " -> " ^ string_of_val v)
+    |> String.concat ", " in
+  "{" ^ state_string ^ "}"
 
 let string_of_top_level (p: top_level): string =
   match p with
   | Program (c, s) -> 
-    Printf.sprintf "{ %s } %s" (string_of_state s) (string_of_comm c)
+    Printf.sprintf "%s %s" (string_of_state s) (string_of_comm c)

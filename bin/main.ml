@@ -33,20 +33,36 @@
 
 let _langthree =  
   let open Langthree in
-    let ast = Run.get_ast_verbose 
-    "2 := 1"
-    (* "skip; skip" *)
+    let ast = Run.get_ast
+    (* Double value in location l1 *)
+    (* "{l1 -> 4} l1 := !l1 + !l1" *)
+
+    (* Example 61 & 66, Swapping Values *)
+    (* "{l1 -> 5, l2 -> 3, l3 -> 0} l3 := !l1; l1 := !l2; l2 := !l3; l3 := 0" *)
+
+    (* Example 62, Sum *)
+    (* "{l1 -> 5, l2 -> 0} l2 := 0; while (1 <= !l1) do (l2 := !l1 + !l2; l1 := !l1 - 1) " *)
+
+    (* Example 63, Aliasing *)
+    (* "{l1 -> l2, l2 -> 5, l3 -> l2} !l1 := 0; l2 := 1; l3 := !(!l1)" *)
+
+    (* Example 63, Aliasing, v2 *)
+    (* "{l1 -> l4, l2 -> 5, l3 -> 0, l4 -> 3} !l1 := 0; l2 := 1; l3 := !(!l1)" *)
+    
+    (* "skip; skip"  *)
+
+    (* *"{l1 -> 3} l1 := 2; skip" *)
+    (* "{l1 -> 3, l2 -> 4} l1 := !l2; skip"  *)
+    "{l1 -> 3, l2 -> 4} while (!l1) <= !l2 do (l1 := !l1 + 1; l2 := !l2 - 1)"  
     (* "while true do skip" *)
-    (* "skip; skip" *)
+
     in
-    ast
     (* let _ = Sem.eval_verbose ast in *)
     (* let _ = Sem.reduce_verbose ast in *)
-    (* let _ = Sem.alpha_equiv_verbose ast (Run.get_ast "x + 1") in *)
+    let _ = Sem.reduce_all_verbose ast in
     (* let _ = Types.infer_verbose ast Types.empty_env in *)
-    (* let _ = Sem.reduce_all_verbose ast in *)
     (* let _ = Types.check_verbose ast Types.TNum Types.empty_env in *)
-    (* () *)
+    ()
 
 
 
