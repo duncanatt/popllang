@@ -14,6 +14,10 @@ utop:
 	# dune utop lib/langone
 	dune utop .
 
+docs:
+	dune build @doc
+	open _build/default/_doc/_html/index.html
+
 .PHONY: test
 
 test:

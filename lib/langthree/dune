@@ -1,5 +1,6 @@
 (library
  (name langthree)
+ (public_name popllang.langthree)
  (modules ast lexer parser sem types run)
  )
 

@@ -1,5 +1,6 @@
 open Ast
 
+(** [eval_expr e s] evaluates the expression [e] in the state [s]. *)
 let rec eval_expr (e: expr) (s: state): value =
   match e with
   | BinOp (Add, e1, e2) -> (* EAdd *)
@@ -31,6 +32,10 @@ let rec eval_expr (e: expr) (s: state): value =
       | _ -> failwith "You can only dereference locations")
   | Val v -> v (* EVal *)
 
+(** [eval_command c s] evaluates the command [c] in the given state [s] and returns the resulting state.
+
+  @raise Failure if assignment or condition expressions are invalid.
+*)
 let rec eval_command (c: comm) (s: state): state =
   match c with
   | Skip -> s (* ESkip *)
@@ -58,16 +63,23 @@ let rec eval_command (c: comm) (s: state): state =
     | Bool false -> eval_command c2 s (* EElse *)
     | _ -> failwith "You can only use booleans in if conditions")
 
+(** [eval p] evaluates a program [p] and returns the resulting state. *)
 let eval (p: top_level): Ast.state =
   let Program (c, s) = p in
   eval_command c s
 
+(** [eval_verbose p] evaluates the given program [p] and prints the evaluation result. It returns the resulting state after evaluation. *)
 let eval_verbose (p: top_level): Ast.state =
   let Program (c, s) = p in
   let s_res = eval_command c s in
   let () = Printf.printf "%s evaluates to %s\n" (Ast.string_of_top_level (Program (c, s))) (Ast.string_of_state s_res) in 
   s_res
 
+(** [reduce_command c s] performs a single small-step reduction of the command [c] in the state [s].
+  It returns a pair [(c', s')] where [c'] is the next command to execute and [s'] is the updated state.
+
+  @raise Failure if there are any type issues.
+*)
 let rec reduce_command (c: comm) (s: state): comm * state =
   match c with
   | Skip -> (Skip, s) (* RSkip *)
@@ -89,16 +101,20 @@ let rec reduce_command (c: comm) (s: state): comm * state =
   | While (e, c) -> (* RWhl *)
     (If (e, Seq (c, While (e, c)), Skip), s)
 
+(** [reduce p] takes a [top_level] program [p], reduces the command in the given state, returning the resulting command and state. *)
 let reduce (p: top_level): (comm * state) =
   let Program (c, s) = p in
     reduce_command c s
 
+(** [reduce_verbose p] reduces a program [p] by one step, prints the reduction, and returns the resulting command and state.
+*)
 let reduce_verbose (p: top_level): (comm * state) =
   let Program (c, s) = p in
   let c', s' = reduce_command c s in
     let () = Printf.printf "%s reduces to %s\n" (Ast.string_of_top_level p) (Ast.string_of_top_level (Program (c', s'))) in 
     (c', s')
 
+(** [reduce_all p] repeatedly reduces the given program [p] until it reaches a state  where the command is [Skip], returning the final state. *)
 let rec reduce_all (p: top_level): state =
   let Program (c, s) = p in
   match c with
@@ -107,6 +123,7 @@ let rec reduce_all (p: top_level): state =
     let c', s' = (reduce p) in
       reduce_all (Program (c', s')) 
 
+(** [reduce_all_verbose p] repeatedly reduces the given program [p] step by step, printing the program state at each step, until it reaches a [Skip] command. Returns the final state after all reductions. *)
 let rec reduce_all_verbose (p: top_level): state =
   let Program (c, s) = p in
   match c with

@@ -58,14 +58,14 @@ let _langthree =
 
     (* Ill behaved examples *)
     (* "{l1 -> true} l1 := 5 + !l1" *)
-    (* "{l1 -> l2} l1 := 5 + !(!l2)" *)
-    "{l1 -> true, l2 -> 0} while 1 <= !l1 do (l2 := 4 + !l2; l1 := !l1 - 1)"
+    "{l1 -> l2} l1 := 5 + !(!l2)"
+    (* "{l1 -> true, l2 -> 0} while 1 <= !l1 do (l2 := 4 + !l2; l1 := !l1 - 1)" *)
     (* "{l1 -> 3, l2 -> 0, l3 -> 0} l2 := 2 + !l1; l1 := true; l3 := 2 + !l1" *)
     in
     (* let _ = Sem.eval_verbose ast in *)
     (* let _ = Sem.reduce_verbose ast in *)
     (* let _ = Sem.reduce_all_verbose ast in *)
-    let _ = Types.typecheck ast in
+    let _ = Types.typecheck_verbose ast in
     ()
 
 
