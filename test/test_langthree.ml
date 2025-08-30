@@ -1,18 +1,31 @@
 open OUnit2
-
 open Langthree
 open Langthree.Ast
 
+type state_pairs = (location * value) list
+
 (* Helper functions *)
- let compare_ast (input: string) (expected_comm: comm) (expected_state: (location * value) list): test = 
+ let compare_ast (input: string) (expected_comm: comm) (expected_state: state_pairs): test = 
   let Program (commands, states) = Run.get_ast input in
   let states_match = (Env.bindings states = Env.bindings (state_from_list expected_state)) in
    "[" ^ input ^ "]" >:: fun _ ->  
     assert_equal states_match true;
     assert_equal commands expected_comm
+
+let compare_eval (input: string) (expected_state: state_pairs): test = 
+  let Program (commands, states) = Run.get_ast input in
+  let final_state = Sem.eval (Program (commands, states)) in
+  let states_match = (Env.bindings final_state = Env.bindings (state_from_list expected_state)) in
+  "[" ^ input ^ "]" >:: fun _ -> assert_equal states_match true
+
+let compare_reduce_all_with_eval (input: string): test = 
+  let Program (commands, states) = Run.get_ast input in
+  let final_state_eval = Sem.eval (Program (commands, states)) in
+  let final_state_reduce_all = Sem.reduce_all (Program (commands, states)) in
+  let states_match = (Env.bindings final_state_eval = Env.bindings final_state_reduce_all) in
+  "[" ^ input ^ "]" >:: fun _ -> assert_equal states_match true
+
 (*    
-let compare_eval (input: string) (expected: Ast.value): test = 
-  "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Sem.eval (Run.get_ast input)) expected
 
 let compare_inferred_types (input: string) (expected: Types.typ): test = 
   "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.infer (Run.get_ast input) Langoneext.Types.empty_env) expected
@@ -20,8 +33,7 @@ let compare_inferred_types (input: string) (expected: Types.typ): test =
 let compare_type_check (input: string) (expected: Types.typ): test = 
   "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.check (Run.get_ast input) expected Langoneext.Types.empty_env) true
 
-let compare_alpha_equivalence (input1: string) (input2: string) (expected: bool): test = 
-  "[" ^ input1 ^ " , " ^ input2 ^ "]" >:: fun _ ->  assert_equal (Sem.alpha_equiv (Run.get_ast input1) (Run.get_ast input2)) expected *)
+*)
 
 (* Tests *)
 
@@ -43,7 +55,7 @@ let tests: test list = [
   compare_ast "{l1 -> true, l2 -> 4} 2 := 1" (Assign ((Val (Num 2)), (Val (Num 1)))) [("l2", Num 4); ("l1", Bool true)];
   compare_ast "{l1 -> true, l2 -> 4, abc -> 444} 2 := 1" (Assign ((Val (Num 2)), (Val (Num 1)))) [("l2", Num 4); ("abc", Num 444); ("l1", Bool true)];
 
-  let c = (While
+  (let c = (While
     (BinOp (Leq,
       UnOp (DeRef,
         Val (Loc "l1")),
@@ -63,47 +75,38 @@ let tests: test list = [
   compare_ast 
     "{l1 -> 3, l2 -> 4} while !l1 <= (!l2) do (l1 := !l1 + 1; l2 := !l2 - 1)" 
     c 
-    [("l1", Num 3); ("l2", Num 4)];
+    [("l1", Num 3); ("l2", Num 4)]);
 
 
+  (* Compare evaluation outputs *)
+  
+  (* Simple addition *)
+  compare_eval "{l1 -> 4} l1 := !l1 + !l1" [("l1", Num 8)];
+  (* Example 61, Swapping Values *)
+  compare_eval "{l1 -> 5, l2 -> 3, l3 -> 0} l3 := !l1; l1 := !l2; l2 := !l3; l3 := 0" [("l1", Num 3); ("l2", Num 5); ("l3", Num 0)];
+  (* Example 62, Sum *)
+  compare_eval "{l1 -> 5, l2 -> 0} l2 := 0; while (1 <= !l1) do (l2 := !l1 + !l2; l1 := !l1 - 1)" [("l1", Num 0); ("l2", Num 15)];
+  (* Example 63, Aliasing *)
+  compare_eval "{l1 -> l2, l2 -> 5, l3 -> l2} !l1 := 0; l2 := 1; l3 := !(!l1)" [("l1", Loc "l2"); ("l2", Num 1); ("l3", Num 1)];
+  (* Example 63, Aliasing, v2 *)
+  compare_eval "{l1 -> l4, l2 -> 5, l3 -> 0, l4 -> 3} !l1 := 0; l2 := 1; l3 := !(!l1)" [("l1", Loc "l4"); ("l2", Num 1); ("l3", Num 0); ("l4", Num 0)];
+  compare_eval "skip; skip" [];
+  compare_eval "while false do skip" [];
+  compare_eval "{l1 -> 3, l2 -> 4} l1 := !l2; l2 := 5; skip" [("l1", Num 4); ("l2", Num 5)];
+  compare_eval "{l1 -> 3, l2 -> 4} while (!l1) <= !l2 do (l1 := !l1 + 1; l2 := !l2 - 1)" [("l1", Num 4); ("l2", Num 3)];
+
+  (* Compares the result state of reduce_all with the one produced by eval, which should match. *)
+  compare_reduce_all_with_eval "{l1 -> 4} l1 := !l1 + !l1";
+  compare_reduce_all_with_eval "{l1 -> 5, l2 -> 3, l3 -> 0} l3 := !l1; l1 := !l2; l2 := !l3; l3 := 0";
+  compare_reduce_all_with_eval "{l1 -> 5, l2 -> 0} l2 := 0; while (1 <= !l1) do (l2 := !l1 + !l2; l1 := !l1 - 1)";
+  compare_reduce_all_with_eval "{l1 -> l2, l2 -> 5, l3 -> l2} !l1 := 0; l2 := 1; l3 := !(!l1)";
+  compare_reduce_all_with_eval "{l1 -> l4, l2 -> 5, l3 -> 0, l4 -> 3} !l1 := 0; l2 := 1; l3 := !(!l1)" ;
+  compare_reduce_all_with_eval "skip; skip";
+  compare_reduce_all_with_eval "while false do skip";
+  compare_reduce_all_with_eval "{l1 -> 3, l2 -> 4} l1 := !l2; l2 := 5; skip";
+  compare_reduce_all_with_eval "{l1 -> 3, l2 -> 4} while (!l1) <= !l2 do (l1 := !l1 + 1; l2 := !l2 - 1)";
+  
   (* 
-
-    (* "{l1 -> 4} l1 := !l1 + !l1" {l1 -> 8} *)
-  
-    (* Example 61, Swapping Values *)
-  "{l1 -> 5, l2 -> 3, l3 -> 0} l3 := !l1; l1 := !l2; l2 := !l3; l3 := 0"
-    in
-    (* {l1 -> 3, l2 -> 5, l3 -> 0} *)
-
-
-        (* Example 62, Sum *)
-    (* "{l1 -> 5, l2 -> 0} l2 := 0; while (1 <= !l1) do (l2 := !l1 + !l2; l1 := !l1 - 1) " *)
-(* {l1 -> 0, l2 -> 15} *)
-
-    (* Example 63, Aliasing, v2 *)
-    (* "{l1 -> l4, l2 -> 5, l3 -> 0, l4 -> 3} !l1 := 0; l2 := 1; l3 := !(!l1)" *)
-    (* {l1 -> l4, l2 -> 1, l3 -> 0, l4 -> 0} *)
-
-
-    (* "skip; skip"  {} *)
-    (* *"{l1 -> 3} l1 := 2; skip" {l1 -> 2} *)
-    (* "{l1 -> 3, l2 -> 4} l1 := !l2; l2 := 5; skip" {l1 -> 4, l2 -> 5} *)
-    (* "{l1 -> 3, l2 -> 4} while (!l1) <= !l2 do (l1 := !l1 + 1; l2 := !l2 - 1)"  *) (* {l1 -> 4, l2 -> 3} *)
-
-
-  (* Compare AST outputs *)
-  compare_eval "2" (Num 2);
-  compare_eval "2 + 3" (Num 5);
-  compare_eval "2 - 3" (Num (-1));
-  compare_eval "~(2 <= 3)" (Bool false);
-  compare_eval "(2 + 4) - (5 + 10)" (Num (-9));
-  compare_eval "(1-1 <= (2 + 3)) && (~~false && true)" (Bool false); 
-  compare_eval "let x = 2 in x" (Num 2);
-  compare_eval "let x = (let y = 5 in y) in x + x" (Num 10);
-  compare_eval "let x = let y = 5 in y in x + x" (Num 10);
-  compare_eval "let x = 5 in let y = 6 in y + x" (Num 11);
-  compare_eval "let x = true in let x = 5 in x" (Num 5);  
-  
   (* Infer types *)
   compare_inferred_types "2" Types.TNum;
   compare_inferred_types "2 + 3" Types.TNum;
@@ -129,15 +132,7 @@ let tests: test list = [
   compare_type_check "let x = let y = 5 in y in x + x" Types.TNum;
   compare_type_check "let x = 5 in let y = 6 in y + x" Types.TNum;
   compare_type_check "let x = true in let x = 5 in x" Types.TNum;
-
-  (* Alpha Equivalence *)
-  compare_alpha_equivalence "let x = 5 in (let y = 3 in x + 1)" "let y = 5 in (let x = 3 in y + 1)" true;
-  compare_alpha_equivalence "let x = 5 in (let y = 3 in x + 1)" "let x = 5 in (let y = 3 in y + 1)" false;
-  compare_alpha_equivalence "let x = 5 in (let y = 3 in x + 1)" "let x = 5 in (let x = 3 in x + 1)" false;
-  compare_alpha_equivalence "5" "5" true;
-  compare_alpha_equivalence "2" "6" false;
-  compare_alpha_equivalence "x" "x" true;
-  compare_alpha_equivalence "x" "y" false; *)
+ *)
 
 ]
 

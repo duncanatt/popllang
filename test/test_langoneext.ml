@@ -1,11 +1,6 @@
 open OUnit2
-
 open Langoneext
 open Langoneext.Ast
-(* open Langoneext.Sem *)
-(* open Langoneext.Types *)
-(* open Langoneext.Lexer *)
-(* open Langoneext.Parser *)
 
 (* Helper functions *)
  let compare_ast (input: string) (expected: Ast.expr): test = 
@@ -13,6 +8,15 @@ open Langoneext.Ast
    
 let compare_eval (input: string) (expected: Ast.value): test = 
   "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Sem.eval (Run.get_ast input)) expected
+
+let compare_reduce_all_with_eval (input: string): test = 
+  let ast = Run.get_ast input in
+  let final_ast_eval = Sem.eval ast in
+  let final_ast_reduce_all = Sem.reduce_all ast in
+
+    match final_ast_reduce_all with
+    | Val v  -> "[" ^ input ^ "]" >:: fun _ -> assert_equal final_ast_eval v
+    | _      -> failwith "Final expression after reductions is not a value"
 
 let compare_inferred_types (input: string) (expected: Types.typ): test = 
   "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Types.infer (Run.get_ast input) Langoneext.Types.empty_env) expected
@@ -52,6 +56,19 @@ let tests: test list = [
   compare_eval "let x = let y = 5 in y in x + x" (Num 10);
   compare_eval "let x = 5 in let y = 6 in y + x" (Num 11);
   compare_eval "let x = true in let x = 5 in x" (Num 5);  
+
+  (* Compare reduce_all with eval*)
+  compare_reduce_all_with_eval "2";
+  compare_reduce_all_with_eval "2 + 3";
+  compare_reduce_all_with_eval "2 - 3";
+  compare_reduce_all_with_eval "~(2 <= 3)";
+  compare_reduce_all_with_eval "(2 + 4) - (5 + 10)";
+  compare_reduce_all_with_eval "(1-1 <= (2 + 3)) && (~~false && true)";
+  compare_reduce_all_with_eval "let x = 2 in x";
+  compare_reduce_all_with_eval "let x = (let y = 5 in y) in x + x";
+  compare_reduce_all_with_eval "let x = let y = 5 in y in x + x";
+  compare_reduce_all_with_eval "let x = 5 in let y = 6 in y + x";
+  compare_reduce_all_with_eval "let x = true in let x = 5 in x";
   
   (* Infer types *)
   compare_inferred_types "2" Types.TNum;

@@ -1,17 +1,9 @@
 open OUnit2
-
 open Langone
 open Langone.Ast
-(* open Langone.Sem *)
-(* open Langone.Types *)
-(* open Langone.Lexer *)
-(* open Langone.Parser *)
 
 
 (* Helper functions *)
-(* let get_ast (s: string): expr = 
-  let lexbuf = Lexing.from_string s in 
-    Parser.prog Lexer.read lexbuf *)
 
  let compare_ast (input: string) (expected: Ast.expr): test = 
    "[" ^ input ^ "]" >:: fun _ ->  assert_equal (Run.get_ast input) expected
