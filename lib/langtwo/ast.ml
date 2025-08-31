@@ -1,10 +1,5 @@
 (* 
-  Syntax restrictions:
   todo: f (x, y, z) is not allowed yet
-  todo: let/fun/if expressions in inner expressions need to have brackets,
-        e.g., if true then (fun(x){x}) 4 else true is allowed, but
-              if true then fun(x){x} 4 else true is not allowed yet
-
 
   Other macros are included:
     - let
