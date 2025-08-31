@@ -7,5 +7,9 @@
  (libraries popllang langoneext ounit2))
 
 (test
+ (name test_langtwo)
+ (libraries popllang langtwo ounit2))
+
+(test
  (name test_langthree)
  (libraries popllang langthree ounit2))

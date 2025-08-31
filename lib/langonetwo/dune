@@ -1,0 +1,8 @@
+(library
+ (name langtwo)
+ (public_name popllang.langtwo)
+ (modules ast lexer parser sem types run)
+ )
+
+(menhir (modules parser))
+(ocamllex lexer)

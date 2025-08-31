@@ -1,21 +1,21 @@
-(* let () =  
+let () =  
   let open Langone in
-    let ast = Run.get_ast 
+    let _ast = Run.get_ast 
     (* "2" *)
       (* "1-1 <= 2 + 3 + (~~4 && true)"  *)
       (* "~(1 + 2 + 3 <= 5 - 6) && false" *)
       "(2 + 4) - (5 + 10)"
     in
-      let _ = Sem.eval_verbose ast in
-      let _ = Sem.reduce_verbose ast in
-      let _ = Types.infer_verbose ast in
-      let _ = Sem.reduce_all_verbose ast in
-      let _ = Types.check_verbose ast Types.TNum in
-      () *)
+      (* let _ = Sem.eval_verbose ast in *)
+      (* let _ = Sem.reduce_verbose ast in *)
+      (* let _ = Types.infer_verbose ast in *)
+      (* let _ = Sem.reduce_all_verbose ast in *)
+      (* let _ = Types.check_verbose ast Types.TNum in *)
+      ()
 
-(* let _langoneext =  
+let _langoneext =  
   let open Langoneext in
-    let ast = Run.get_ast 
+    let _ast = Run.get_ast 
       (* "let x = (let y = 5 in y) in x + x" *)
       "let x = let y = 5 in y in x + x"
       (* "let x = 5 in let y = 6 in y + x" *)
@@ -23,17 +23,32 @@
       (* "(1 + (2 + 5)) + (3 + 4)" *)
 
     in
-    let _ = Sem.eval_verbose ast in
+    (* let _ = Sem.eval_verbose ast in *)
     (* let _ = Sem.reduce_verbose ast in *)
     (* let _ = Sem.alpha_equiv_verbose ast (Run.get_ast "x + 1") in *)
     (* let _ = Types.infer_verbose ast Types.empty_env in *)
     (* let _ = Sem.reduce_all_verbose ast in *)
     (* let _ = Types.check_verbose ast Types.TNum Types.empty_env in *)
-    () *)
+    ()
+
+let _langtwo =  
+  let open Langtwo in
+    let _ast = Run.get_ast_verbose 
+      (* "x && false" *)
+      (* "f (a)" *)
+      "(f + 1) (a, b, c, d)"
+    in
+    (* let _ = Sem.eval_verbose ast in *)
+    (* let _ = Sem.reduce_verbose ast in *)
+    (* let _ = Sem.alpha_equiv_verbose ast (Run.get_ast "x + 1") in *)
+    (* let _ = Types.infer_verbose ast Types.empty_env in *)
+    (* let _ = Sem.reduce_all_verbose ast in *)
+    (* let _ = Types.check_verbose ast Types.TNum Types.empty_env in *)
+    ()
 
 let _langthree =  
   let open Langthree in
-    let ast = Run.get_ast
+    let _ast = Run.get_ast
 
     (* Double value in location l1 *)
     (* "{l1 -> 4} l1 := !l1 + !l1" *)
@@ -65,8 +80,9 @@ let _langthree =
     (* let _ = Sem.eval_verbose ast in *)
     (* let _ = Sem.reduce_verbose ast in *)
     (* let _ = Sem.reduce_all_verbose ast in *)
-    let _ = Types.typecheck_verbose ast in
+    (* let _ = Types.typecheck_verbose ast in *)
     ()
+
 
 
 

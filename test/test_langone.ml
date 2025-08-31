@@ -29,7 +29,7 @@ let tests: test list = [
   compare_ast "(2 + 4) - (5 + 10)" (BinOp (Sub, (BinOp (Add, Val (Num 2), Val (Num 4))), (BinOp (Add, Val (Num 5), Val (Num 10)))));
   compare_ast "1-1 <= 2 + 3 + (~~4 && true)" (BinOp (Leq, BinOp (Sub, Val (Num 1), Val (Num 1)), BinOp (Add, BinOp (Add, Val (Num 2), Val (Num 3)), BinOp (And, UnOp (Not, UnOp (Not, Val (Num 4))), Val (Bool true)))));
 
-  (* Compare AST outputs *)
+  (* Compare evaluation outputs *)
   compare_eval "2" (Num 2);
   compare_eval "2 + 3" (Num 5);
   compare_eval "2 - 3" (Num (-1));

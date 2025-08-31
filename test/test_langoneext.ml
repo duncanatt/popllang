@@ -44,7 +44,7 @@ let tests: test list = [
   compare_ast "let x = true in let x = 5 in x" (Let ("x", Val (Bool true), Let ("x", Val (Num 5), Var "x")));
 
   
-  (* Compare AST outputs *)
+  (* Compare evaluation output *)
   compare_eval "2" (Num 2);
   compare_eval "2 + 3" (Num 5);
   compare_eval "2 - 3" (Num (-1));
