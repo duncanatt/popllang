@@ -26,6 +26,7 @@ rule read = parse
   | "let" { LET }
   | "=" { EQUALS }
   | "," { COMMA }
+  (* | "." { DOT } *)
   | "in" { IN }
   | "fun" { FUN }
   | "if" { IF }

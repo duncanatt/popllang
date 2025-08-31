@@ -4,5 +4,6 @@
  (modules ast lexer parser sem types run)
  )
 
-(menhir (modules parser))
+(menhir 
+ (modules parser))
 (ocamllex lexer)

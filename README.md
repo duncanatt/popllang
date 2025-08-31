@@ -53,16 +53,19 @@ let x = 5 in let y = 6 in y + x
 
 ### L2 (Langtwo)
 
-functional, first-class functions, statically typed
+<!-- functional, first-class functions, statically typed -->
+
+The parser has some flaws (see ast.ml)
 
 ```text
-TODO
+if true then ((fun(x){x}) 4) else 3
 ```
 
 ### L3 (Langthree)
 
-imperative, state/configuration based, sequential, statically typed
+<!-- imperative, state/configuration based, sequential, statically typed -->
 
 ```text
-TODO
+{l1 -> 4} 
+l1 := !l1 + !l1
 ```

@@ -1,3 +1,20 @@
+(* 
+  Syntax restrictions:
+  todo: f (x, y, z) is not allowed yet
+  todo: let/fun/if expressions in inner expressions need to have brackets,
+        e.g., if true then (fun(x){x}) 4 else true is allowed, but
+              if true then fun(x){x} 4 else true is not allowed yet
+
+
+  Other macros are included:
+    - let
+    - let (with multiple bindings)
+    - operators: &&, ~, ==
+    - named functions with multiple arguments
+    - anonymous functions as basic constructs
+*)
+
+
 (* Plain Syntax  *)
 
 (** Binary operators. *)
@@ -5,7 +22,6 @@ type binop =
   | Add
   | Sub
   | Leq
-  | And
 
 (** Values. *)
 type value =
@@ -37,7 +53,7 @@ type s_binop =
   | S_Leq
   | S_And (* sugar *)
   | S_Equal (* sugar *)
-  
+
 (** Expressions. *)
 type s_expr =
   | S_Val of value
@@ -50,7 +66,7 @@ type s_expr =
   | S_FunAnon of string * s_expr
   | S_FunMany of string * (string list) * s_expr (* sugar *)
   | S_App of s_expr * s_expr
-  | S_AppMany of s_expr * (s_expr list) (* sugar *)
+  (* | S_AppMany of (s_expr list) (* sugar *) *)
   | S_If of s_expr * s_expr * s_expr
 
 let rec desugar (e: s_expr): expr =
@@ -59,7 +75,7 @@ let rec desugar (e: s_expr): expr =
     | S_Var x -> Var x
     | S_BinOp (op, e1, e2) -> 
         (match op with
-        | S_Add -> BinOp (And, desugar e1, desugar e2)
+        | S_Add -> BinOp (Add, desugar e1, desugar e2)
         | S_Sub -> BinOp (Sub, desugar e1, desugar e2)
         | S_Leq -> BinOp (Leq, desugar e1, desugar e2)
         | S_And -> 
@@ -73,9 +89,14 @@ let rec desugar (e: s_expr): expr =
       If (desugar e, Val (Bool false), Val (Bool true))
     | S_Let (x, e1, e2) ->
       App ((FunAnon (x, (desugar e2))), (desugar e1))
-    | S_LetMany (_x_es, _e') ->
-      (* let rec unfold_let  *)
-      failwith "TODO in terms of let and then desugar again"
+    | S_LetMany (es, e_final) ->
+      (* unfold lets into applications of anonymous functions *)
+      let rec unfold_lets (es: (string * s_expr) list) (e_final':s_expr): expr =
+       ( match es with
+        | (x,e')::es' -> App ((FunAnon (x, (unfold_lets es' e_final))), desugar e')
+        | [] -> desugar e_final')
+      in
+      unfold_lets es e_final
     | S_Fun (name, arg, body) ->
       Fun (name, arg, desugar body)
     | S_FunAnon (arg, body) ->
@@ -89,14 +110,16 @@ let rec desugar (e: s_expr): expr =
       unfold_fun f xs e'
     | S_App (e1, e2) ->
       App (desugar e1, desugar e2)
-    | S_AppMany (e1, e2s) ->
+    (* | S_AppMany (es) ->
       let rec unfold_app (init: expr) es =
        ( match es with
         | e'::es' ->  unfold_app (App (init, desugar e')) es'
         | [] -> init
         )
       in
-      unfold_app (desugar e1) e2s
+      (match es with
+      | e1::e2s -> unfold_app (desugar e1) e2s
+      | [] -> failwith "S_AppMany requires at least one argument") *)
     | S_If (e1, e2, e3) -> If (desugar e1, desugar e2, desugar e3)
 
 (** Pretty prints a binary operator. *)
@@ -105,13 +128,6 @@ let string_of_binop (op: binop) =
   | Add -> "+"
   | Sub -> "-"
   | Leq -> "<="
-  | And -> "&&"
-
-(* 
-(** Pretty prints a unary operator. *)
-let string_of_unop (op: unop) =
-  match op with
-  | Not -> "~" *)
 
 (** Pretty prints a value. *)
 let string_of_val (v: value): string =

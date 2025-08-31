@@ -36,7 +36,21 @@ let _langtwo =
     let _ast = Run.get_ast_verbose 
       (* "x && false" *)
       (* "f (a)" *)
-      "(f + 1) (a, b, c, d)"
+      (* "(f + 1) a b" *)
+      (* "f a b" *)
+      (* "f (a 5) b" *)
+      (* "let x = a 3 + 3 in (f x)" *)
+      (* "let x = 1, y = 2 in (f x y)" *)
+      (* "f x" *)
+      (* "if true then a else false f" *)
+      (* "f (if true then a else b) y" *)
+      (* "(fun(x){x + 1}) 3" *)
+      (* "if true then (fun f(x){3}) s else 2" *)
+      (* "fun f(x){ let y = 3 in x + y }" *)
+      (* "fun f(x){ let y = 3 in x + y }" *)
+      (* "if true then (fun(x){x}) 4 else true" *) 
+      "if true then (fun(x){x}) 4 else true"
+       (* not allowed  *)
     in
     (* let _ = Sem.eval_verbose ast in *)
     (* let _ = Sem.reduce_verbose ast in *)
