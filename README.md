@@ -55,10 +55,14 @@ let x = 5 in let y = 6 in y + x
 
 <!-- functional, first-class functions, statically typed -->
 
-The parser has some flaws (see ast.ml)
+parser works,
+interpreter/type checker wip
 
 ```text
-if true then ((fun(x){x}) 4) else 3
+let x = 1
+  in let f = fun(y){y + x} 
+    in let x = 2
+      in f 3
 ```
 
 ### L3 (Langthree)

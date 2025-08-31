@@ -23,6 +23,12 @@ let tests: test list = [
   compare_ast "f (if true then a else b) y"  (App (App (Var "f", If (Val (Bool true), Var "a", Var "b")), Var "y"));
   compare_ast "3 + a (b)" (BinOp (Add, Val (Num 3), App (Var "a", Var "b"))); (* precedence *)
   compare_ast "(3 + a) (b)" (App (BinOp (Add, Val (Num 3), Var "a"), Var "b")); (* precedence *)
+  compare_ast 
+    "let x = 1
+        in let f = fun(y){y + x} 
+          in let x = 2
+            in f 3"
+    (App (FunAnon ("x", App (FunAnon ("f", App (FunAnon ("x", App (Var "f", Val (Num 3))), Val (Num 2))), FunAnon ("y", BinOp (Add, Var "y", Var "x")))), Val (Num 1)));
 
   (* Syntactic sugar expanded ASTs *)
   (* let *)
