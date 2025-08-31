@@ -43,14 +43,18 @@ let _langtwo =
       (* "let x = 1, y = 2 in (f x y)" *)
       (* "f x" *)
       (* "if true then a else false f" *)
-      (* "f (if true then a else b) y" *)
-      (* "(fun(x){x + 1}) 3" *)
+      "f (if true then a else b) y"
+      (* "fun(x){x + 1} 3" *)
       (* "if true then (fun f(x){3}) s else 2" *)
       (* "fun f(x){ let y = 3 in x + y }" *)
       (* "fun f(x){ let y = 3 in x + y }" *)
-      (* "if true then (fun(x){x}) 4 else true" *) 
-      "if true then (fun(x){x}) 4 else true"
-       (* not allowed  *)
+      (* "if true then (fun(x){x}) 4 else true"  *)
+      (* "if true then fun(x){ fun f(y){y (a b c + 2)} yy } 4 else true"  *)
+      (* "if true then fun(x){x} 4 else true"   *)
+       (* "if x then f y else a + b - c" *)
+      (* "3 + a (b)" *)
+      (* "(3 + a) (b)" *)
+      (* "a b c d e2" *)
     in
     (* let _ = Sem.eval_verbose ast in *)
     (* let _ = Sem.reduce_verbose ast in *)
