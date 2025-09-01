@@ -24,8 +24,10 @@ rule read = parse
   | "{" { LBRACK }
   | "}" { RBRACK }
   | "let" { LET }
+  | ":" { COLON }
   | "=" { EQUALS }
   | "==" { EQUALSEQUALS }
+  | "->" { ARROW }
   | "," { COMMA }
   | "in" { IN }
   | "fun" { FUN }

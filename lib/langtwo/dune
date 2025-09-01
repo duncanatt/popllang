@@ -1,7 +1,7 @@
 (library
  (name langtwo)
  (public_name popllang.langtwo)
- (modules ast lexer parser sem types run)
+ (modules ast lexer parser sem types type_kinds run)
  )
 
 (menhir 

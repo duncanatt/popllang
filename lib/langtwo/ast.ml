@@ -1,3 +1,5 @@
+open Type_kinds
+
 (* 
   todo: f (x, y, z) is not allowed yet
 
@@ -8,7 +10,6 @@
     - named functions with multiple arguments
     - anonymous functions as basic constructs
 *)
-
 
 (* Plain Syntax  *)
 
@@ -23,12 +24,15 @@ type value =
   | Num of int
   | Bool of bool
 
+(* variable with optional type annotation *)
+type var_typ = string * (typ option)  
+
 (** Expressions. *)
 type expr =
   | Val of value
   | Var of string 
-  | Fun of string * string * expr
-  | FunAnon of string * expr
+  | Fun of string * var_typ * expr
+  | FunAnon of var_typ * expr
   | BinOp of binop * expr * expr
   | App of expr * expr
   | If of expr * expr * expr
@@ -39,30 +43,30 @@ type expr =
 
 (** Unary operator. *)
 type s_unop =
-  | S_Not  (* sugar *)
+  | S_Not  (* syntactic sugar *)
 
 (** Binary operators. *)
 type s_binop =
   | S_Add
   | S_Sub
   | S_Leq
-  | S_And (* sugar *)
-  | S_Equal (* sugar *)
+  | S_And (* syntactic sugar *)
+  | S_Equal (* syntactic sugar *)
 
 (** Expressions. *)
 type s_expr =
-  | S_Val of value
-  | S_Var of string 
-  | S_BinOp of s_binop * s_expr * s_expr
-  | S_Let of string * s_expr * s_expr  (* sugar *)
-  | S_LetMany of (string * s_expr) list * s_expr  (* sugar *)
-  | S_UnOp of s_unop * s_expr (* sugar *)
-  | S_Fun of string * string * s_expr
-  | S_FunAnon of string * s_expr
-  | S_FunMany of string * (string list) * s_expr (* sugar *)
-  | S_App of s_expr * s_expr
-  (* | S_AppMany of (s_expr list) (* sugar *) *)
-  | S_If of s_expr * s_expr * s_expr
+  | S_Val of value (* 5, true *)
+  | S_Var of string  (* x, y *)
+  | S_BinOp of s_binop * s_expr * s_expr  (* e + e, e && e *) (* may contain syntactic sugar *)
+  | S_Let of var_typ * s_expr * s_expr  (* let x = e in e *) (* syntactic sugar *)
+  | S_LetMany of (var_typ * s_expr) list * s_expr (* let x1 = e, x2 = e in e  *) (* syntactic sugar *)
+  | S_UnOp of s_unop * s_expr (* ~e *) (* syntactic sugar *)
+  | S_Fun of string * var_typ * s_expr (* fun g(x){e} *)
+  | S_FunAnon of var_typ * s_expr (* fun(x){e} *)
+  | S_FunMany of string * (var_typ list) * s_expr (* fun g(x,y,z){e} *) (* syntactic sugar *)
+  | S_App of s_expr * s_expr (* e e *)
+  (* | S_AppMany of (s_expr list) (* e (e,e,e) *) (* syntactic sugar *) *)
+  | S_If of s_expr * s_expr * s_expr (* if e then e else e *)
 
 let rec desugar (e: s_expr): expr =
     match e with
@@ -86,7 +90,7 @@ let rec desugar (e: s_expr): expr =
       App ((FunAnon (x, (desugar e2))), (desugar e1))
     | S_LetMany (es, e_final) ->
       (* unfold lets into applications of anonymous functions *)
-      let rec unfold_lets (es: (string * s_expr) list) (e_final':s_expr): expr =
+      let rec unfold_lets (es: (var_typ * s_expr) list) (e_final':s_expr): expr =
        ( match es with
         | (x,e')::es' -> App ((FunAnon (x, (unfold_lets es' e_final))), desugar e')
         | [] -> desugar e_final')
@@ -97,7 +101,7 @@ let rec desugar (e: s_expr): expr =
     | S_FunAnon (arg, body) ->
       FunAnon (arg, desugar body)
     | S_FunMany (f, xs, e') ->
-      let rec unfold_fun (f: string) (xs: string list) e'' = 
+      let rec unfold_fun (f: string) (xs: var_typ list) e'' = 
         match xs with
         | x :: xs' -> FunAnon (x, unfold_fun f xs' e'')
         | [] -> desugar e''
@@ -132,6 +136,11 @@ let string_of_val (v: value): string =
 
 (** [string_of_expr e] pretty prints an expression [e]. *)
 let rec string_of_expr (e: expr) =
+  let string_of_var_typ (x, t_opt) =
+    (match t_opt with
+    | Some t -> x ^ ": " ^ string_of_typ t
+    | None -> x)
+  in
   match e with
   | Val v -> string_of_val v
   | Var x -> x 
@@ -142,6 +151,6 @@ let rec string_of_expr (e: expr) =
   | App (e1, e2) ->
     Printf.sprintf "(%s %s)" (string_of_expr e1) (string_of_expr e2)
   | Fun (name, arg, body) ->
-    Printf.sprintf "fun %s(%s){ %s }" name arg (string_of_expr body)
+    Printf.sprintf "fun %s(%s){ %s }" name (string_of_var_typ arg) (string_of_expr body)
   | FunAnon (arg, body) ->
-    Printf.sprintf "fun (%s){ %s }" arg (string_of_expr body)
+    Printf.sprintf "fun (%s){ %s }" (string_of_var_typ arg) (string_of_expr body)

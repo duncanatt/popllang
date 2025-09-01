@@ -38,8 +38,7 @@ open Ast
 %left AND
 %right NOT
 %left LEQ
-%left ADD
-%left SUB
+%left ADD SUB
 %right BANG
 
 // Main program production.

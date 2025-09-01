@@ -49,8 +49,10 @@ let tests: test list = [
   compare_eval "2 + 3" (Num 5);
   compare_eval "2 - 3" (Num (-1));
   compare_eval "~(2 <= 3)" (Bool false);
+  compare_eval "2 + 4 - 5 + 10" (Num (11)); (* check precedence *)
+  compare_eval "((2 + 4) - 5) + 10" (Num (11));
   compare_eval "(2 + 4) - (5 + 10)" (Num (-9));
-  compare_eval "(1-1 <= (2 + 3)) && (~~false && true)" (Bool false); 
+  compare_eval "(1-1 <= (2 + 3)) && (~~false && true)" (Bool false);
   compare_eval "let x = 2 in x" (Num 2);
   compare_eval "let x = (let y = 5 in y) in x + x" (Num 10);
   compare_eval "let x = let y = 5 in y in x + x" (Num 10);

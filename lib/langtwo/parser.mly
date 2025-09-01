@@ -10,10 +10,13 @@ open Ast
 %token LET EQUALS IN
 %token FUN LBRACK RBRACK
 %token COMMA
+%token COLON
+%token ARROW
 %token IF THEN ELSE
 %token EOF
 
 // %right NOT
+%right ARROW
 %left EQUALSEQUALS
 %left AND
 %left LEQ
@@ -38,12 +41,16 @@ prog:
 // Expressions.
 expr:
   | IF c = expr; THEN; t = expr; ELSE e = expr; { S_If(c,t,e); }
-  | l = let_expr; { l; };
+  | l = let_expr; { l; }
+  ;
 
 let_expr:
-  | LET; ps = separated_list(COMMA, var_pair); IN; e = expr; 
+// Pattern for multiple let bindings with optional type annotations : 
+//   x : t = e, y = e
+  | LET; ps = separated_list(COMMA, var_type_exp); IN; e = expr; 
       { match ps with [ (x,e1) ] -> S_Let(x,e1,e) | _ -> S_LetMany(ps,e); }
-  | b = bin_op_expr; { b; };
+  | b = bin_op_expr; { b; }
+  ;
 
 bin_op_expr:
   | l = bin_op_expr; AND; r = bin_op_expr; { S_BinOp(S_And,l,r); }
@@ -51,11 +58,13 @@ bin_op_expr:
   | l = bin_op_expr; ADD; r = bin_op_expr; { S_BinOp(S_Add,l,r); }
   | l = bin_op_expr; SUB; r = bin_op_expr; { S_BinOp(S_Sub,l,r); }
   | l = bin_op_expr; EQUALSEQUALS; r = bin_op_expr; { S_BinOp(S_Equal,l,r); }
-  | a = app_expr; { a; };
+  | a = app_expr; { a; }
+  ;
 
 app_expr:
   | f = app_expr; a = unary_expr; { S_App(f,a); }  (* left-associative application *)
-  | a = unary_expr; { a; };
+  | a = unary_expr; { a; }
+  ;
 
 unary_expr:
   | NOT; a = unary_expr; { S_UnOp(S_Not,a); }
@@ -68,14 +77,33 @@ values_par:
   | x = VAR; { S_Var x; }
   | TRUE; { S_Val(Bool true); }
   | FALSE; { S_Val(Bool false); }
-  | LPAREN e = expr RPAREN; { e; }
-  | FUN LPAREN y = VAR RPAREN LBRACK e = expr RBRACK; { S_FunAnon(y,e); }
-  | FUN f = VAR LPAREN ys = separated_list(COMMA,VAR) RPAREN LBRACK e = expr RBRACK;
+  | LPAREN; e = expr; RPAREN; { e; }
+  | FUN; LPAREN; y = var_type_pair; RPAREN; LBRACK; e = expr; RBRACK; { S_FunAnon(y,e); }
+  | FUN; f = VAR; LPAREN; ys = separated_list(COMMA,var_type_pair); RPAREN; LBRACK; e = expr RBRACK;
       { match ys with [y] -> S_Fun(f,y,e) | _ -> S_FunMany(f,ys,e); }
   ;
 
-var_pair:
-  | x = VAR; EQUALS; e = expr { (x,e) }
+// Pattern for multiple let bindings with optional type annotations : 
+//   x : t = e, y = e
+var_type_exp:
+  | v = var_type_pair; EQUALS; e = expr { (v,e) }
+  ;
+
+// Variable name and optional type
+var_type_pair:
+  | x = VAR { (x, None ) }
+  | x = VAR; COLON; t = full_type { (x, Some t) }
+  ;
+
+full_type:
+  | t = VAR {
+      match t with
+      | "int" -> TNum
+      | "bool" -> TBool
+      | _ -> failwith ("Unknown type: " ^ t)
+    }
+  | t1 = full_type; ARROW; t2 = full_type { TFun (t1, t2) }
+  | LPAREN; t = full_type; RPAREN { t } 
   ;
 
 
