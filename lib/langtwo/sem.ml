@@ -110,5 +110,5 @@ let rec reduce_all_verbose (e: expr): expr =
     ((Printf.printf "%s\n" (Ast.string_of_expr e));
     reduce_all_verbose (reduce e))
 
-let rec eval (_e: expr) : expr =
+let _eval (_e: expr) : expr =
   failwith "todo"
