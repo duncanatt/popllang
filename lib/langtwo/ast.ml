@@ -101,12 +101,20 @@ let rec desugar (e: s_expr): expr =
     | S_FunAnon (arg, body) ->
       FunAnon (arg, desugar body)
     | S_FunMany (f, xs, e') ->
-      let rec unfold_fun (f: string) (xs: var_typ list) e'' = 
-        match xs with
-        | x :: xs' -> FunAnon (x, unfold_fun f xs' e'')
+      (* desugar first argument as named function
+         then unfold remaining arguments as anonymous functions
+         e.g.
+         fun g(x, y, z){e}
+          is desugared into 
+         fun g(x){ fun (y){ fun (z) {e} } } *)
+      let rec unfold_inner_anon_fun (f: string) (xss: var_typ list) e'' = 
+        match xss with
+        | x :: xss' -> FunAnon (x, unfold_inner_anon_fun f xss' e'') (* anonymous fun *)
         | [] -> desugar e''
         in
-      unfold_fun f xs e'
+      (match xs with
+      | y :: ys' -> Fun (f, y, unfold_inner_anon_fun f ys' e') (* named fun *)
+      | [] -> failwith "S_FunMany requires at least one argument")
     | S_App (e1, e2) ->
       App (desugar e1, desugar e2)
     (* | S_AppMany (es) ->

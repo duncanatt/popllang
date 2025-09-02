@@ -98,7 +98,7 @@ var_type_pair:
 full_type:
   | t = VAR {
       match t with
-      | "int" -> TNum
+      | "num" -> TNum
       | "bool" -> TBool
       | _ -> failwith ("Unknown type: " ^ t)
     }

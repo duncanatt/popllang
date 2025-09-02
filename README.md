@@ -2,6 +2,11 @@
 
 L1, L1 (ext), L2, L3 languages for POPL
 
+## WIP remaining
+
+- [ ] type checker for L2
+- [ ] eval for L2
+
 ## Setup
 
 ### Requirements

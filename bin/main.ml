@@ -33,7 +33,7 @@ let _langoneext =
 
 let _langtwo =  
   let open Langtwo in
-    let _ast = Run.get_ast_verbose 
+    let ast = Run.get_ast_verbose 
       (* "x && false" *)
       (* "f a b" *)
       (* "let x = 1, y = 2 in (f x y)" *)
@@ -46,11 +46,19 @@ let _langtwo =
        (* "if x then f y else a + b - c" *)
       (* "(3 + a) (b)" *)
       (* "a b c" *)
-      "let x = 1
+      (* "let x = 1
         in let f = fun(y){y + x} 
           in let x = 2
-            in f 3"
+            in f 3" *)
+      (* "(fun (x){fun (y){ x + y }} (1 + 2)) (3 + 4)" *)
+      (* "let succ = fun(x){x+1} 
+          in succ 2 + succ 3 + succ 4" *)
+      "let succ = fun(x: num){x+1} 
+          in let add = fun f(x: num, y: num){ if y == 0 then x else (succ (f x (y - 1))) }
+            in (add 2 4 - add 1 5)"
     in
+    (* let _ = Sem.reduce_verbose ast in *)
+    let _ = Sem.reduce_all_verbose ast in
     ()
 
 let _langthree =  
