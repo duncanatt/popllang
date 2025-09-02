@@ -68,6 +68,7 @@ type s_expr =
   (* | S_AppMany of (s_expr list) (* e (e,e,e) *) (* syntactic sugar *) *)
   | S_If of s_expr * s_expr * s_expr (* if e then e else e *)
 
+(** [desugar e] desugars the given expression [e] into an expression without syntactic sugar. *)
 let rec desugar (e: s_expr): expr =
     match e with
     | S_Val v -> Val v

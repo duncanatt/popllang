@@ -1,0 +1,83 @@
+%{
+open Ast
+open Type_kinds
+%}
+
+%token <int> NUM
+%token <string> VAR
+%token TRUE FALSE
+%token ADD SUB LEQ AND NOT EQUALSEQUALS
+%token LPAREN RPAREN
+%token LET EQUALS IN
+%token FUN LBRACK RBRACK
+%token COMMA
+%token COLON
+%token ARROW
+%token IF THEN ELSE
+%token EOF
+
+// %right NOT
+%right ARROW
+%left EQUALSEQUALS
+%left AND
+%left LEQ
+%left ADD SUB
+
+%start <expr> prog
+
+%%
+
+
+////////////////////////////////
+// VERSION with conflicts, but accepts the more general syntax
+////////////////////////////////
+
+// Program root.
+prog:
+  | e = expr; EOF { desugar e }
+
+// Expressions.
+expr:
+  | LET; ps = separated_list(COMMA, var_type_exp); IN; e = expr; 
+      { match ps with [ (x,e1) ] -> S_Let(x,e1,e) | _ -> S_LetMany(ps,e); }
+  | FUN; LPAREN; y = var_type_pair; RPAREN; LBRACK; e = expr; RBRACK; { S_FunAnon(y,e); }
+  | FUN; f = VAR; LPAREN; ys = separated_list(COMMA,var_type_pair); RPAREN; LBRACK; e = expr RBRACK;
+      { match ys with [y] -> S_Fun(f,y,e) | _ -> S_FunMany(f,ys,e); }
+  | IF; e1 = expr; THEN; e2 = expr; ELSE; e3 = expr { S_If(e1,e2,e3) }
+  | e1 = expr; ADD; e2 = expr { S_BinOp(S_Add,e1,e2) }
+  | e1 = expr; SUB; e2 = expr { S_BinOp(S_Sub,e1,e2) }
+  | e1 = expr; LEQ; e2 = expr { S_BinOp(S_Leq,e1,e2) }
+  | e1 = expr; AND; e2 = expr { S_BinOp(S_And,e1,e2) }
+  | NOT e = expr { S_UnOp(S_Not,e) }
+  | f = expr; arg = expr { S_App(f,arg) }
+  | n = NUM { S_Val(Num n) }
+  | x = VAR { S_Var x }
+  | TRUE { S_Val(Bool true) }
+  | FALSE { S_Val(Bool false) }
+  | LPAREN; e = expr; RPAREN { e }
+  ;
+
+
+// Pattern for multiple let bindings with optional type annotations : 
+//   x : t = e, y = e
+var_type_exp:
+  | v = var_type_pair; EQUALS; e = expr { (v,e) }
+  ;
+
+// Variable name and optional type
+var_type_pair:
+  | x = VAR { (x, None ) }
+  | x = VAR; COLON; t = full_type { (x, Some t) }
+  ;
+
+full_type:
+  | t = VAR {
+      match t with
+      | "num" -> TNum
+      | "bool" -> TBool
+      | _ -> failwith ("Unknown type: " ^ t)
+    }
+  | t1 = full_type; ARROW; t2 = full_type { TFun (t1, t2) }
+  | LPAREN; t = full_type; RPAREN { t } 
+  ;
+

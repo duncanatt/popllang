@@ -21,10 +21,10 @@ let rec subst (x: string) (e_new: expr) (e: expr) : expr =
   | Val _ -> e
   | Var y -> if x = y then e_new else e
   | Fun (f, (y, t_opt), body) ->
-      if x = f || x = y || List.mem f (fv e_new) || List.mem y (fv e_new) then e (* f,y ∉ { x } ∪ fv(v) *)
+      if x = f || x = y || List.mem f (fv e_new) || List.mem y (fv e_new) then e (* f,y ∉ { x } ∪ fv(e_new) *)
       else Fun (f, (y, t_opt), subst x e_new body)
   | FunAnon ((y, t_opt), body) ->
-      if x = y || List.mem y (fv e_new) then e
+      if x = y || List.mem y (fv e_new) then e (* y ∉ { x } ∪ fv(e_new) *)
       else FunAnon ((y, t_opt), subst x e_new body)
   | BinOp (op, e1, e2) -> BinOp (op, subst x e_new e1, subst x e_new e2)
   | App (e1, e2) -> App (subst x e_new e1, subst x e_new e2)
